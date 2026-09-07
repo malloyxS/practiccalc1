@@ -67,6 +67,7 @@ class ListStatusView extends StatelessWidget {
   final String? error;
   final VoidCallback? onRetry;
   final Widget child;
+  final String emptyText;
 
   const ListStatusView({
     super.key,
@@ -75,6 +76,7 @@ class ListStatusView extends StatelessWidget {
     required this.child,
     this.error,
     this.onRetry,
+    this.emptyText = 'Ничего не найдено. Измените условия поиска.',
   });
 
   @override
@@ -94,29 +96,30 @@ class ListStatusView extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.error_outline, size: 48, color: Theme.of(context).colorScheme.error),
+              Icon(
+                Icons.error_outline,
+                size: 48,
+                color: Theme.of(context).colorScheme.error,
+              ),
               const SizedBox(height: 12),
               Text(error!, textAlign: TextAlign.center),
               const SizedBox(height: 16),
-              FilledButton(
-                onPressed: onRetry,
-                child: const Text('Повторить'),
-              ),
+              FilledButton(onPressed: onRetry, child: const Text('Повторить')),
             ],
           ),
         ),
       );
     }
     if (empty) {
-      return const Center(
+      return Center(
         child: Padding(
-          padding: EdgeInsets.all(48),
+          padding: const EdgeInsets.all(48),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.search_off, size: 48),
-              SizedBox(height: 12),
-              Text('Ничего не найдено. Измените условия поиска.'),
+              const Icon(Icons.search_off, size: 48),
+              const SizedBox(height: 12),
+              Text(emptyText, textAlign: TextAlign.center),
             ],
           ),
         ),
@@ -134,6 +137,7 @@ Future<bool> confirmAction(
   final result = await showDialog<bool>(
     context: context,
     builder: (context) => AlertDialog(
+      constraints: const BoxConstraints(maxWidth: 420),
       title: Text(title),
       content: Text(message),
       actions: [

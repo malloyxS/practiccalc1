@@ -14,7 +14,11 @@ class ForbiddenScreen extends StatelessWidget {
         child: NarrowBody(
           child: Column(
             children: [
-              Icon(Icons.lock_outline, size: 56, color: Theme.of(context).colorScheme.error),
+              Icon(
+                Icons.lock_outline,
+                size: 56,
+                color: Theme.of(context).colorScheme.error,
+              ),
               const SizedBox(height: 16),
               const Text(
                 'Для этой страницы нужна другая роль. Клиент остановил переход, чтобы не слать заведомо запрещённый запрос.',

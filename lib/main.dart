@@ -22,6 +22,7 @@ import 'state/auth_notifier.dart';
 import 'state/author_list_notifier.dart';
 import 'state/book_list_notifier.dart';
 import 'state/catalog_notifiers.dart';
+import 'state/connection_notifier.dart';
 import 'widgets/inactivity_watcher.dart';
 
 Future<void> main() async {
@@ -59,13 +60,27 @@ class CalcApp extends StatelessWidget {
         providers: [
           ChangeNotifierProvider<AuthNotifier>.value(value: auth),
           Provider<Dio>.value(value: dio),
-          Provider<BookRepository>(create: (context) => ApiBookRepository(context.read<Dio>())),
-          Provider<AuthorRepository>(create: (context) => ApiAuthorRepository(context.read<Dio>())),
-          Provider<GenreRepository>(create: (context) => ApiGenreRepository(context.read<Dio>())),
-          Provider<PublisherRepository>(create: (context) => ApiPublisherRepository(context.read<Dio>())),
-          Provider<ReaderRepository>(create: (context) => ApiReaderRepository(context.read<Dio>())),
-          Provider<LoanRepository>(create: (context) => LoanRepository(context.read<Dio>())),
-          Provider<UserRepository>(create: (context) => UserRepository(context.read<Dio>())),
+          Provider<BookRepository>(
+            create: (context) => ApiBookRepository(context.read<Dio>()),
+          ),
+          Provider<AuthorRepository>(
+            create: (context) => ApiAuthorRepository(context.read<Dio>()),
+          ),
+          Provider<GenreRepository>(
+            create: (context) => ApiGenreRepository(context.read<Dio>()),
+          ),
+          Provider<PublisherRepository>(
+            create: (context) => ApiPublisherRepository(context.read<Dio>()),
+          ),
+          Provider<ReaderRepository>(
+            create: (context) => ApiReaderRepository(context.read<Dio>()),
+          ),
+          Provider<LoanRepository>(
+            create: (context) => LoanRepository(context.read<Dio>()),
+          ),
+          Provider<UserRepository>(
+            create: (context) => UserRepository(context.read<Dio>()),
+          ),
           ChangeNotifierProvider(
             create: (context) {
               final client = context.read<Dio>();
@@ -78,19 +93,27 @@ class CalcApp extends StatelessWidget {
             },
           ),
           ChangeNotifierProvider(
-            create: (context) => BookListNotifier(context.read<BookRepository>()),
+            create: (context) =>
+                BookListNotifier(context.read<BookRepository>()),
           ),
           ChangeNotifierProvider(
-            create: (context) => AuthorListNotifier(context.read<AuthorRepository>()),
+            create: (context) =>
+                AuthorListNotifier(context.read<AuthorRepository>()),
           ),
           ChangeNotifierProvider(
-            create: (context) => GenreListNotifier(context.read<GenreRepository>()),
+            create: (context) =>
+                GenreListNotifier(context.read<GenreRepository>()),
           ),
           ChangeNotifierProvider(
-            create: (context) => PublisherListNotifier(context.read<PublisherRepository>()),
+            create: (context) =>
+                PublisherListNotifier(context.read<PublisherRepository>()),
           ),
           ChangeNotifierProvider(
-            create: (context) => ReaderListNotifier(context.read<ReaderRepository>()),
+            create: (context) =>
+                ReaderListNotifier(context.read<ReaderRepository>()),
+          ),
+          ChangeNotifierProvider(
+            create: (context) => ConnectionNotifier(context.read<Dio>()),
           ),
         ],
         child: ListenableBuilder(

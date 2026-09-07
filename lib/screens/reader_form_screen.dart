@@ -82,7 +82,9 @@ class _ReaderFormScreenState extends State<ReaderFormScreen> {
     final expires = DateTime.parse(_expiresAt.text.trim());
     if (!expires.isAfter(issued)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Срок действия должен быть позже даты выдачи')),
+        const SnackBar(
+          content: Text('Срок действия должен быть позже даты выдачи'),
+        ),
       );
       return;
     }
@@ -117,7 +119,9 @@ class _ReaderFormScreenState extends State<ReaderFormScreen> {
     } on ApiException catch (e) {
       setState(() => _saving = false);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message)));
     }
   }
 
@@ -149,21 +153,36 @@ class _ReaderFormScreenState extends State<ReaderFormScreen> {
         children: [
           TextFormField(
             controller: _lastName,
-            decoration: const InputDecoration(labelText: 'Фамилия', border: OutlineInputBorder()),
-            validator: V.all([V.required('Укажите фамилию'), V.length(min: 2, max: 80)]),
+            decoration: const InputDecoration(
+              labelText: 'Фамилия',
+              border: OutlineInputBorder(),
+            ),
+            validator: V.all([
+              V.required('Укажите фамилию'),
+              V.length(min: 2, max: 80),
+            ]),
             onChanged: (_) => _markDirty(),
           ),
           const SizedBox(height: 16),
           TextFormField(
             controller: _firstName,
-            decoration: const InputDecoration(labelText: 'Имя', border: OutlineInputBorder()),
-            validator: V.all([V.required('Укажите имя'), V.length(min: 2, max: 80)]),
+            decoration: const InputDecoration(
+              labelText: 'Имя',
+              border: OutlineInputBorder(),
+            ),
+            validator: V.all([
+              V.required('Укажите имя'),
+              V.length(min: 2, max: 80),
+            ]),
             onChanged: (_) => _markDirty(),
           ),
           const SizedBox(height: 16),
           TextFormField(
             controller: _email,
-            decoration: const InputDecoration(labelText: 'Email', border: OutlineInputBorder()),
+            decoration: const InputDecoration(
+              labelText: 'Email',
+              border: OutlineInputBorder(),
+            ),
             validator: V.all([
               V.required('Укажите email'),
               V.email(),
@@ -177,17 +196,32 @@ class _ReaderFormScreenState extends State<ReaderFormScreen> {
           const SizedBox(height: 16),
           TextFormField(
             controller: _phone,
-            decoration: const InputDecoration(labelText: 'Телефон', border: OutlineInputBorder()),
-            validator: V.all([V.required('Укажите телефон'), V.length(min: 6, max: 20)]),
+            decoration: const InputDecoration(
+              labelText: 'Телефон',
+              border: OutlineInputBorder(),
+            ),
+            validator: V.all([
+              V.required('Укажите телефон'),
+              V.length(min: 6, max: 20),
+            ]),
             onChanged: (_) => _markDirty(),
           ),
           const SizedBox(height: 24),
-          Text('Читательский билет', style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            'Читательский билет',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
           const SizedBox(height: 12),
           TextFormField(
             controller: _cardNumber,
-            decoration: const InputDecoration(labelText: 'Номер билета', border: OutlineInputBorder()),
-            validator: V.all([V.required('Укажите номер билета'), V.length(min: 4, max: 20)]),
+            decoration: const InputDecoration(
+              labelText: 'Номер билета',
+              border: OutlineInputBorder(),
+            ),
+            validator: V.all([
+              V.required('Укажите номер билета'),
+              V.length(min: 4, max: 20),
+            ]),
             onChanged: (_) => _markDirty(),
           ),
           const SizedBox(height: 16),

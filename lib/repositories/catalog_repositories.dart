@@ -46,7 +46,9 @@ class InMemoryGenreRepository implements GenreRepository {
   Future<PageResult<Genre>> find(CatalogQuery q) async {
     await Future<void>.delayed(const Duration(milliseconds: 250));
     if (q.fail) throw StateError('учебная ошибка загрузки');
-    var rows = store.genres.where((g) => q.includeDeleted || !g.isDeleted).toList();
+    var rows = store.genres
+        .where((g) => q.includeDeleted || !g.isDeleted)
+        .toList();
     if (q.search.trim().isNotEmpty) {
       final needle = q.search.trim().toLowerCase();
       rows = rows.where((g) => g.name.toLowerCase().contains(needle)).toList();
@@ -68,7 +70,11 @@ class InMemoryGenreRepository implements GenreRepository {
 
   @override
   Future<Genre> create(Genre genre) async {
-    final created = Genre(id: store.nextGenreId++, name: genre.name, description: genre.description);
+    final created = Genre(
+      id: store.nextGenreId++,
+      name: genre.name,
+      description: genre.description,
+    );
     store.genres.add(created);
     await store.persist();
     return created;
@@ -129,11 +135,17 @@ class InMemoryPublisherRepository implements PublisherRepository {
   Future<PageResult<Publisher>> find(CatalogQuery q) async {
     await Future<void>.delayed(const Duration(milliseconds: 250));
     if (q.fail) throw StateError('учебная ошибка загрузки');
-    var rows = store.publishers.where((p) => q.includeDeleted || !p.isDeleted).toList();
+    var rows = store.publishers
+        .where((p) => q.includeDeleted || !p.isDeleted)
+        .toList();
     if (q.search.trim().isNotEmpty) {
       final needle = q.search.trim().toLowerCase();
       rows = rows
-          .where((p) => p.name.toLowerCase().contains(needle) || p.city.toLowerCase().contains(needle))
+          .where(
+            (p) =>
+                p.name.toLowerCase().contains(needle) ||
+                p.city.toLowerCase().contains(needle),
+          )
           .toList();
     }
     rows.sort((a, b) {
@@ -181,11 +193,15 @@ class InMemoryPublisherRepository implements PublisherRepository {
   Future<void> softDelete(int id) async {
     final linked = store.booksCountForPublisher(id);
     if (linked > 0) {
-      throw RelationException('Нельзя удалить издательство: на него ссылаются $linked книг(и).');
+      throw RelationException(
+        'Нельзя удалить издательство: на него ссылаются $linked книг(и).',
+      );
     }
     final i = store.publishers.indexWhere((p) => p.id == id);
     if (i == -1) throw StateError('Издательство $id не найдено');
-    store.publishers[i] = store.publishers[i].copyWith(deletedAt: DateTime.now());
+    store.publishers[i] = store.publishers[i].copyWith(
+      deletedAt: DateTime.now(),
+    );
     await store.persist();
   }
 
@@ -193,7 +209,9 @@ class InMemoryPublisherRepository implements PublisherRepository {
   Future<void> hardDelete(int id) async {
     final linked = store.booksCountForPublisher(id);
     if (linked > 0) {
-      throw RelationException('Нельзя удалить издательство: на него ссылаются $linked книг(и).');
+      throw RelationException(
+        'Нельзя удалить издательство: на него ссылаются $linked книг(и).',
+      );
     }
     store.publishers.removeWhere((p) => p.id == id);
     await store.persist();
@@ -212,14 +230,18 @@ class InMemoryPublisherRepository implements PublisherRepository {
     for (final id in ids) {
       final linked = store.booksCountForPublisher(id);
       if (linked > 0) {
-        throw RelationException('Нельзя удалить издательство: на него ссылаются $linked книг(и).');
+        throw RelationException(
+          'Нельзя удалить издательство: на него ссылаются $linked книг(и).',
+        );
       }
     }
     var count = 0;
     for (final id in ids) {
       final i = store.publishers.indexWhere((p) => p.id == id && !p.isDeleted);
       if (i != -1) {
-        store.publishers[i] = store.publishers[i].copyWith(deletedAt: DateTime.now());
+        store.publishers[i] = store.publishers[i].copyWith(
+          deletedAt: DateTime.now(),
+        );
         count++;
       }
     }
@@ -237,7 +259,9 @@ class InMemoryReaderRepository implements ReaderRepository {
   Future<PageResult<Reader>> find(CatalogQuery q) async {
     await Future<void>.delayed(const Duration(milliseconds: 250));
     if (q.fail) throw StateError('учебная ошибка загрузки');
-    var rows = store.readers.where((r) => q.includeDeleted || !r.isDeleted).toList();
+    var rows = store.readers
+        .where((r) => q.includeDeleted || !r.isDeleted)
+        .toList();
     if (q.search.trim().isNotEmpty) {
       final needle = q.search.trim().toLowerCase();
       rows = rows

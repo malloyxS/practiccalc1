@@ -29,7 +29,9 @@ Dio buildDio({String? Function()? tokenProvider}) {
       },
       onResponse: (response, handler) {
         if (kDebugMode) {
-          debugPrint('[API] ${response.statusCode} ${response.requestOptions.uri}');
+          debugPrint(
+            '[API] ${response.statusCode} ${response.requestOptions.uri}',
+          );
         }
         final status = response.statusCode ?? 0;
         if (status >= 400) {

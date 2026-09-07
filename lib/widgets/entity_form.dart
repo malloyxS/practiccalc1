@@ -125,7 +125,9 @@ class ChipMultiSelect extends StatelessWidget {
                   selected: field.value!.contains(option.id),
                   onSelected: (_) {
                     final next = [...field.value!];
-                    next.contains(option.id) ? next.remove(option.id) : next.add(option.id);
+                    next.contains(option.id)
+                        ? next.remove(option.id)
+                        : next.add(option.id);
                     field.didChange(next);
                     onChanged(next);
                   },

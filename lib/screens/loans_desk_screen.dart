@@ -60,16 +60,18 @@ class _LoansDeskScreenState extends State<LoansDeskScreen> {
     }
     try {
       await context.read<LoanRepository>().issue(
-            bookId: int.parse(_bookId.text.trim()),
-            readerId: int.parse(_readerId.text.trim()),
-          );
+        bookId: int.parse(_bookId.text.trim()),
+        readerId: int.parse(_readerId.text.trim()),
+      );
       _bookId.clear();
       _readerId.clear();
       if (!mounted) return;
       await _load();
     } on ApiException catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message)));
     }
   }
 
@@ -80,7 +82,9 @@ class _LoansDeskScreenState extends State<LoansDeskScreen> {
       await _load();
     } on ApiException catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message)));
     }
   }
 
@@ -126,7 +130,10 @@ class _LoansDeskScreenState extends State<LoansDeskScreen> {
                     ),
                   ),
                 ),
-                FilledButton(onPressed: _issue, child: const Text('Оформить выдачу')),
+                FilledButton(
+                  onPressed: _issue,
+                  child: const Text('Оформить выдачу'),
+                ),
               ],
             ),
             const SizedBox(height: 16),
@@ -144,7 +151,9 @@ class _LoansDeskScreenState extends State<LoansDeskScreen> {
                     return Card(
                       child: ListTile(
                         title: Text(loan.bookTitle),
-                        subtitle: Text('${loan.readerName} · до ${loan.dueAt.toIso8601String().substring(0, 10)}'),
+                        subtitle: Text(
+                          '${loan.readerName} · до ${loan.dueAt.toIso8601String().substring(0, 10)}',
+                        ),
                         trailing: loan.isActive
                             ? TextButton(
                                 onPressed: () => _close(loan),

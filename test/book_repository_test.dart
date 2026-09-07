@@ -18,7 +18,9 @@ void main() {
     final hidden = await repo.find(const BookQuery());
     expect(hidden.items.any((b) => b.id == 1), isFalse);
 
-    final withDeleted = await repo.find(const BookQuery(includeDeleted: true, size: 50));
+    final withDeleted = await repo.find(
+      const BookQuery(includeDeleted: true, size: 50),
+    );
     expect(withDeleted.items.any((b) => b.id == 1 && b.isDeleted), isTrue);
   });
 
@@ -37,7 +39,10 @@ void main() {
       ),
     );
     expect(page.total, greaterThan(0));
-    expect(page.items.every((b) => b.title.toLowerCase().contains('деньги')), isTrue);
+    expect(
+      page.items.every((b) => b.title.toLowerCase().contains('деньги')),
+      isTrue,
+    );
     expect(page.items.every((b) => b.genreIds.contains(4)), isTrue);
   });
 
@@ -72,15 +77,14 @@ void main() {
     final store = LibraryStore.memory();
     final repo = InMemoryPublisherRepository(store);
     expect(store.booksCountForPublisher(1), greaterThan(0));
-    expect(
-      () => repo.hardDelete(1),
-      throwsA(isA<RelationException>()),
-    );
+    expect(() => repo.hardDelete(1), throwsA(isA<RelationException>()));
   });
 
   test('можно удалить издательство без книг', () async {
     final store = LibraryStore.memory();
-    store.publishers.add(Publisher(id: 99, name: 'Пустое', city: 'Казань', foundedYear: 2020));
+    store.publishers.add(
+      Publisher(id: 99, name: 'Пустое', city: 'Казань', foundedYear: 2020),
+    );
     final repo = InMemoryPublisherRepository(store);
     await repo.hardDelete(99);
     expect(store.publishers.any((p) => p.id == 99), isFalse);

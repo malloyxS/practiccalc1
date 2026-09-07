@@ -28,11 +28,11 @@ class LibraryCard {
   }
 
   Map<String, dynamic> toJson() => {
-        'number': number,
-        'issuedAt': issuedAt.toIso8601String(),
-        'expiresAt': expiresAt.toIso8601String(),
-        'active': active,
-      };
+    'number': number,
+    'issuedAt': issuedAt.toIso8601String(),
+    'expiresAt': expiresAt.toIso8601String(),
+    'active': active,
+  };
 
   factory LibraryCard.fromJson(Map<String, dynamic>? json) {
     final data = json ?? const <String, dynamic>{};
@@ -89,24 +89,26 @@ class Reader {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'lastName': lastName,
-        'firstName': firstName,
-        'email': email,
-        'phone': phone,
-        'card': card.toJson(),
-        'deletedAt': deletedAt?.toIso8601String(),
-      };
+    'id': id,
+    'lastName': lastName,
+    'firstName': firstName,
+    'email': email,
+    'phone': phone,
+    'card': card.toJson(),
+    'deletedAt': deletedAt?.toIso8601String(),
+  };
 
   factory Reader.fromJson(Map<String, dynamic> json) => Reader(
-        id: jsonInt(json['id']),
-        lastName: jsonString(json['lastName']),
-        firstName: jsonString(json['firstName']),
-        email: jsonString(json['email']),
-        phone: jsonString(json['phone']),
-        card: LibraryCard.fromJson(
-          json['card'] is Map<String, dynamic> ? json['card'] as Map<String, dynamic> : null,
-        ),
-        deletedAt: jsonDate(json['deletedAt']),
-      );
+    id: jsonInt(json['id']),
+    lastName: jsonString(json['lastName']),
+    firstName: jsonString(json['firstName']),
+    email: jsonString(json['email']),
+    phone: jsonString(json['phone']),
+    card: LibraryCard.fromJson(
+      json['card'] is Map<String, dynamic>
+          ? json['card'] as Map<String, dynamic>
+          : null,
+    ),
+    deletedAt: jsonDate(json['deletedAt']),
+  );
 }

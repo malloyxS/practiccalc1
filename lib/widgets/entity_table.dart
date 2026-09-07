@@ -44,7 +44,9 @@ class EntityTable<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final minWidth = constraints.maxWidth.isFinite ? constraints.maxWidth : 600.0;
+        final minWidth = constraints.maxWidth.isFinite
+            ? constraints.maxWidth
+            : 600.0;
         return Scrollbar(
           thumbVisibility: true,
           child: SingleChildScrollView(
@@ -70,7 +72,8 @@ class EntityTable<T> extends StatelessWidget {
                               ? null
                               : (_, _) => onSort!(column.sortField!),
                         ),
-                      if (actions != null) const DataColumn(label: Text('Действия')),
+                      if (actions != null)
+                        const DataColumn(label: Text('Действия')),
                     ],
                     rows: [
                       for (final item in items)
@@ -78,9 +81,7 @@ class EntityTable<T> extends StatelessWidget {
                           selected: selected.contains(idOf(item)),
                           color: isDeleted?.call(item) == true
                               ? WidgetStatePropertyAll(
-                                  Theme.of(context)
-                                      .colorScheme
-                                      .errorContainer
+                                  Theme.of(context).colorScheme.errorContainer
                                       .withValues(alpha: 0.35),
                                 )
                               : null,
@@ -97,7 +98,8 @@ class EntityTable<T> extends StatelessWidget {
                                 DefaultTextStyle.merge(
                                   style: isDeleted?.call(item) == true
                                       ? const TextStyle(
-                                          decoration: TextDecoration.lineThrough,
+                                          decoration:
+                                              TextDecoration.lineThrough,
                                         )
                                       : null,
                                   child: column.build(item),

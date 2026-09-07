@@ -1,0 +1,28 @@
+name: analyze-test-deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - run: flutter pub get
+      - run: dart format --set-exit-if-changed lib test
+      - run: flutter analyze
+      - run: flutter test
+      - run: flutter build web --release --base-href /practiccalc1/ --dart-define=API_BASE_URL=https://api.example.com/api
+      - run: cp build/web/index.html build/web/404.html
+      - uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: build/web

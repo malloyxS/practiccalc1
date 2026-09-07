@@ -39,7 +39,9 @@ class V {
     };
   }
 
-  static Validator positive([String message = 'Значение должно быть неотрицательным']) {
+  static Validator positive([
+    String message = 'Значение должно быть неотрицательным',
+  ]) {
     return (value) {
       final n = int.tryParse(value?.trim() ?? '');
       if (n == null) return 'Введите целое число';
@@ -73,7 +75,9 @@ class V {
     return (value) {
       final text = value?.trim() ?? '';
       if (text.isEmpty) return null;
-      return DateTime.tryParse(text) == null ? 'Дата в формате ГГГГ-ММ-ДД' : null;
+      return DateTime.tryParse(text) == null
+          ? 'Дата в формате ГГГГ-ММ-ДД'
+          : null;
     };
   }
 
@@ -82,7 +86,9 @@ class V {
     return PasswordRules(
       longEnough: text.length >= 8,
       hasDigit: RegExp(r'\d').hasMatch(text),
-      hasSpecial: RegExp(r'''[!@#\$%^&*(),.?":{}|<>_\-+=\[\]\\/;'`~]''').hasMatch(text),
+      hasSpecial: RegExp(
+        r'''[!@#\$%^&*(),.?":{}|<>_\-+=\[\]\\/;'`~]''',
+      ).hasMatch(text),
     );
   }
 

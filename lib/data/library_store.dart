@@ -72,7 +72,8 @@ class LibraryStore extends ChangeNotifier {
     nextReaderId = _nextId(readers.map((e) => e.id));
   }
 
-  int _nextId(Iterable<int> ids) => ids.fold<int>(0, (m, id) => id > m ? id : m) + 1;
+  int _nextId(Iterable<int> ids) =>
+      ids.fold<int>(0, (m, id) => id > m ? id : m) + 1;
 
   void restore() {
     restoreMessage = null;
@@ -83,10 +84,22 @@ class LibraryStore extends ChangeNotifier {
     }
     try {
       books = _decode(prefs.getString(booksKey), Book.fromJson, seed.seedBooks);
-      authors = _decode(prefs.getString(authorsKey), Author.fromJson, seed.seedAuthors);
+      authors = _decode(
+        prefs.getString(authorsKey),
+        Author.fromJson,
+        seed.seedAuthors,
+      );
       genres = _decode(prefs.getString(genresKey), Genre.fromJson, seed.genres);
-      publishers = _decode(prefs.getString(publishersKey), Publisher.fromJson, seed.publishers);
-      readers = _decode(prefs.getString(readersKey), Reader.fromJson, seed.seedReaders);
+      publishers = _decode(
+        prefs.getString(publishersKey),
+        Publisher.fromJson,
+        seed.publishers,
+      );
+      readers = _decode(
+        prefs.getString(readersKey),
+        Reader.fromJson,
+        seed.seedReaders,
+      );
       _refreshIds();
       if (prefs.getString(booksKey) == null) {
         restoreMessage = 'Первый запуск: загружен начальный набор данных.';
@@ -107,17 +120,34 @@ class LibraryStore extends ChangeNotifier {
   ) {
     if (raw == null) return [...fallback];
     final list = jsonDecode(raw) as List<dynamic>;
-    return list.map((item) => fromJson(Map<String, dynamic>.from(item as Map))).toList();
+    return list
+        .map((item) => fromJson(Map<String, dynamic>.from(item as Map)))
+        .toList();
   }
 
   Future<void> persist() async {
     final prefs = _prefs;
     if (prefs == null) return;
-    await prefs.setString(booksKey, jsonEncode(books.map((e) => e.toJson()).toList()));
-    await prefs.setString(authorsKey, jsonEncode(authors.map((e) => e.toJson()).toList()));
-    await prefs.setString(genresKey, jsonEncode(genres.map((e) => e.toJson()).toList()));
-    await prefs.setString(publishersKey, jsonEncode(publishers.map((e) => e.toJson()).toList()));
-    await prefs.setString(readersKey, jsonEncode(readers.map((e) => e.toJson()).toList()));
+    await prefs.setString(
+      booksKey,
+      jsonEncode(books.map((e) => e.toJson()).toList()),
+    );
+    await prefs.setString(
+      authorsKey,
+      jsonEncode(authors.map((e) => e.toJson()).toList()),
+    );
+    await prefs.setString(
+      genresKey,
+      jsonEncode(genres.map((e) => e.toJson()).toList()),
+    );
+    await prefs.setString(
+      publishersKey,
+      jsonEncode(publishers.map((e) => e.toJson()).toList()),
+    );
+    await prefs.setString(
+      readersKey,
+      jsonEncode(readers.map((e) => e.toJson()).toList()),
+    );
     notifyListeners();
   }
 
@@ -142,20 +172,26 @@ class LibraryStore extends ChangeNotifier {
     return null;
   }
 
-  String genreNamesOf(List<int> ids) => ids.map((id) => genreById(id)?.name ?? '$id').join(', ');
+  String genreNamesOf(List<int> ids) =>
+      ids.map((id) => genreById(id)?.name ?? '$id').join(', ');
 
   String publisherNameOf(int id) => publisherById(id)?.name ?? '$id';
 
-  String authorNamesOf(List<int> ids) => ids.map((id) => authorById(id)?.fullName ?? '$id').join(', ');
+  String authorNamesOf(List<int> ids) =>
+      ids.map((id) => authorById(id)?.fullName ?? '$id').join(', ');
 
   bool isbnTaken(String isbn, {int? excludeId}) {
     final needle = isbn.trim().toLowerCase();
-    return books.any((b) => b.isbn.toLowerCase() == needle && b.id != excludeId);
+    return books.any(
+      (b) => b.isbn.toLowerCase() == needle && b.id != excludeId,
+    );
   }
 
   bool emailTaken(String email, {int? excludeId}) {
     final needle = email.trim().toLowerCase();
-    return readers.any((r) => r.email.toLowerCase() == needle && r.id != excludeId);
+    return readers.any(
+      (r) => r.email.toLowerCase() == needle && r.id != excludeId,
+    );
   }
 
   int booksCountForPublisher(int publisherId) =>

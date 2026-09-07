@@ -30,9 +30,10 @@ CalcResult calculate(String? rawA, String? rawOp, String? rawB) {
     '+' => CalcSuccess(a + b),
     '-' => CalcSuccess(a - b),
     '*' => CalcSuccess(a * b),
-    '/' => b == 0
-        ? const CalcFailure('Деление на ноль невозможно')
-        : CalcSuccess(a / b),
+    '/' =>
+      b == 0
+          ? const CalcFailure('Деление на ноль невозможно')
+          : CalcSuccess(a / b),
     _ => const CalcFailure('Неизвестная операция'),
   };
 }

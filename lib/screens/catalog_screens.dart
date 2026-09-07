@@ -45,7 +45,9 @@ class _GenresScreenState extends State<GenresScreen> {
   void didUpdateWidget(covariant GenresScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.query != widget.query) {
-      if (_search.text != widget.query.search) _search.text = widget.query.search;
+      if (_search.text != widget.query.search) {
+        _search.text = widget.query.search;
+      }
       context.read<GenreListNotifier>().applyQuery(widget.query);
     }
   }
@@ -77,7 +79,9 @@ class _GenresScreenState extends State<GenresScreen> {
             _ListFilters(
               search: _search,
               searchLabel: 'Поиск по названию',
-              showDeleted: context.watch<AuthNotifier>().can(Operation.restoreRecords),
+              showDeleted: context.watch<AuthNotifier>().can(
+                Operation.restoreRecords,
+              ),
               includeDeleted: widget.query.includeDeleted,
               hasSelection: notifier.hasSelection,
               selectedCount: notifier.selected.length,
@@ -87,12 +91,14 @@ class _GenresScreenState extends State<GenresScreen> {
                   _go(widget.query.copyWith(search: value));
                 });
               },
-              onDeleted: (value) => _go(widget.query.copyWith(includeDeleted: value)),
+              onDeleted: (value) =>
+                  _go(widget.query.copyWith(includeDeleted: value)),
               onDeleteSelected: () async {
                 final ok = await confirmAction(
                   context,
                   title: 'Удалить выбранные',
-                  message: 'Логическое удаление ${notifier.selected.length} жанров.',
+                  message:
+                      'Логическое удаление ${notifier.selected.length} жанров.',
                 );
                 if (ok) await notifier.deleteSelected();
               },
@@ -100,9 +106,15 @@ class _GenresScreenState extends State<GenresScreen> {
             const SizedBox(height: 12),
             Expanded(
               child: ListStatusView(
-                loading: notifier.status == LoadStatus.loading || notifier.status == LoadStatus.idle,
-                empty: notifier.status == LoadStatus.success && notifier.result.items.isEmpty,
-                error: notifier.status == LoadStatus.error ? notifier.error : null,
+                loading:
+                    notifier.status == LoadStatus.loading ||
+                    notifier.status == LoadStatus.idle,
+                empty:
+                    notifier.status == LoadStatus.success &&
+                    notifier.result.items.isEmpty,
+                error: notifier.status == LoadStatus.error
+                    ? notifier.error
+                    : null,
                 onRetry: () => _go(widget.query.copyWith(fail: false)),
                 child: compact
                     ? ListView.separated(
@@ -112,21 +124,35 @@ class _GenresScreenState extends State<GenresScreen> {
                           final genre = notifier.result.items[index];
                           return Card(
                             color: genre.isDeleted
-                                ? Theme.of(context).colorScheme.errorContainer.withValues(alpha: 0.4)
+                                ? Theme.of(context).colorScheme.errorContainer
+                                      .withValues(alpha: 0.4)
                                 : null,
                             child: ListTile(
                               leading: Checkbox(
                                 value: notifier.selected.contains(genre.id),
-                                onChanged: (_) => notifier.toggleSelection(genre.id),
+                                onChanged: (_) =>
+                                    notifier.toggleSelection(genre.id),
                               ),
                               title: Text(
                                 genre.name,
                                 style: genre.isDeleted
-                                    ? const TextStyle(decoration: TextDecoration.lineThrough)
+                                    ? const TextStyle(
+                                        decoration: TextDecoration.lineThrough,
+                                      )
                                     : null,
                               ),
-                              subtitle: Text(genre.description.isEmpty ? 'Без описания' : genre.description),
-                              trailing: Wrap(children: _genreActions(context, notifier, genre)),
+                              subtitle: Text(
+                                genre.description.isEmpty
+                                    ? 'Без описания'
+                                    : genre.description,
+                              ),
+                              trailing: Wrap(
+                                children: _genreActions(
+                                  context,
+                                  notifier,
+                                  genre,
+                                ),
+                              ),
                             ),
                           );
                         },
@@ -142,14 +168,22 @@ class _GenresScreenState extends State<GenresScreen> {
                         onSort: (field) => _go(
                           widget.query.copyWith(
                             sortField: field,
-                            sortAscending: field == widget.query.sortField ? !widget.query.sortAscending : true,
+                            sortAscending: field == widget.query.sortField
+                                ? !widget.query.sortAscending
+                                : true,
                           ),
                         ),
                         columns: [
-                          TableColumnSpec(label: 'Название', sortField: 'name', build: (g) => Text(g.name)),
+                          TableColumnSpec(
+                            label: 'Название',
+                            sortField: 'name',
+                            build: (g) => Text(g.name),
+                          ),
                           TableColumnSpec(
                             label: 'Описание',
-                            build: (g) => Text(g.description.isEmpty ? '—' : g.description),
+                            build: (g) => Text(
+                              g.description.isEmpty ? '—' : g.description,
+                            ),
                           ),
                         ],
                         actions: (g) => _genreActions(context, notifier, g),
@@ -186,7 +220,9 @@ class _PublishersScreenState extends State<PublishersScreen> {
     super.initState();
     _search = TextEditingController(text: widget.query.search);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) context.read<PublisherListNotifier>().applyQuery(widget.query);
+      if (mounted) {
+        context.read<PublisherListNotifier>().applyQuery(widget.query);
+      }
     });
   }
 
@@ -194,7 +230,9 @@ class _PublishersScreenState extends State<PublishersScreen> {
   void didUpdateWidget(covariant PublishersScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.query != widget.query) {
-      if (_search.text != widget.query.search) _search.text = widget.query.search;
+      if (_search.text != widget.query.search) {
+        _search.text = widget.query.search;
+      }
       context.read<PublisherListNotifier>().applyQuery(widget.query);
     }
   }
@@ -263,7 +301,9 @@ class _PublishersScreenState extends State<PublishersScreen> {
             _ListFilters(
               search: _search,
               searchLabel: 'Поиск по названию или городу',
-              showDeleted: context.watch<AuthNotifier>().can(Operation.restoreRecords),
+              showDeleted: context.watch<AuthNotifier>().can(
+                Operation.restoreRecords,
+              ),
               includeDeleted: widget.query.includeDeleted,
               hasSelection: notifier.hasSelection,
               selectedCount: notifier.selected.length,
@@ -273,7 +313,8 @@ class _PublishersScreenState extends State<PublishersScreen> {
                   _go(widget.query.copyWith(search: value));
                 });
               },
-              onDeleted: (value) => _go(widget.query.copyWith(includeDeleted: value)),
+              onDeleted: (value) =>
+                  _go(widget.query.copyWith(includeDeleted: value)),
               onDeleteSelected: () async {
                 final ok = await confirmAction(
                   context,
@@ -286,9 +327,15 @@ class _PublishersScreenState extends State<PublishersScreen> {
             const SizedBox(height: 12),
             Expanded(
               child: ListStatusView(
-                loading: notifier.status == LoadStatus.loading || notifier.status == LoadStatus.idle,
-                empty: notifier.status == LoadStatus.success && notifier.result.items.isEmpty,
-                error: notifier.status == LoadStatus.error ? notifier.error : null,
+                loading:
+                    notifier.status == LoadStatus.loading ||
+                    notifier.status == LoadStatus.idle,
+                empty:
+                    notifier.status == LoadStatus.success &&
+                    notifier.result.items.isEmpty,
+                error: notifier.status == LoadStatus.error
+                    ? notifier.error
+                    : null,
                 onRetry: () => _go(widget.query.copyWith(fail: false)),
                 child: compact
                     ? ListView.separated(
@@ -298,18 +345,27 @@ class _PublishersScreenState extends State<PublishersScreen> {
                           final publisher = notifier.result.items[index];
                           return Card(
                             color: publisher.isDeleted
-                                ? Theme.of(context).colorScheme.errorContainer.withValues(alpha: 0.4)
+                                ? Theme.of(context).colorScheme.errorContainer
+                                      .withValues(alpha: 0.4)
                                 : null,
                             child: ListTile(
                               leading: Checkbox(
                                 value: notifier.selected.contains(publisher.id),
-                                onChanged: (_) => notifier.toggleSelection(publisher.id),
+                                onChanged: (_) =>
+                                    notifier.toggleSelection(publisher.id),
                               ),
                               title: Text(publisher.name),
                               subtitle: Text(
                                 '${publisher.city}, ${publisher.foundedYear} · книг: ${cache.booksCountForPublisher(publisher.id)}',
                               ),
-                              trailing: Wrap(children: _publisherActions(context, notifier, publisher, _guarded)),
+                              trailing: Wrap(
+                                children: _publisherActions(
+                                  context,
+                                  notifier,
+                                  publisher,
+                                  _guarded,
+                                ),
+                              ),
                             ),
                           );
                         },
@@ -325,12 +381,22 @@ class _PublishersScreenState extends State<PublishersScreen> {
                         onSort: (field) => _go(
                           widget.query.copyWith(
                             sortField: field,
-                            sortAscending: field == widget.query.sortField ? !widget.query.sortAscending : true,
+                            sortAscending: field == widget.query.sortField
+                                ? !widget.query.sortAscending
+                                : true,
                           ),
                         ),
                         columns: [
-                          TableColumnSpec(label: 'Название', sortField: 'name', build: (p) => Text(p.name)),
-                          TableColumnSpec(label: 'Город', sortField: 'city', build: (p) => Text(p.city)),
+                          TableColumnSpec(
+                            label: 'Название',
+                            sortField: 'name',
+                            build: (p) => Text(p.name),
+                          ),
+                          TableColumnSpec(
+                            label: 'Город',
+                            sortField: 'city',
+                            build: (p) => Text(p.city),
+                          ),
                           TableColumnSpec(
                             label: 'Год основания',
                             sortField: 'foundedYear',
@@ -340,10 +406,12 @@ class _PublishersScreenState extends State<PublishersScreen> {
                           TableColumnSpec(
                             label: 'Книг',
                             numeric: true,
-                            build: (p) => Text('${cache.booksCountForPublisher(p.id)}'),
+                            build: (p) =>
+                                Text('${cache.booksCountForPublisher(p.id)}'),
                           ),
                         ],
-                        actions: (p) => _publisherActions(context, notifier, p, _guarded),
+                        actions: (p) =>
+                            _publisherActions(context, notifier, p, _guarded),
                       ),
               ),
             ),
@@ -385,7 +453,9 @@ class _ReadersScreenState extends State<ReadersScreen> {
   void didUpdateWidget(covariant ReadersScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.query != widget.query) {
-      if (_search.text != widget.query.search) _search.text = widget.query.search;
+      if (_search.text != widget.query.search) {
+        _search.text = widget.query.search;
+      }
       context.read<ReaderListNotifier>().applyQuery(widget.query);
     }
   }
@@ -397,7 +467,8 @@ class _ReadersScreenState extends State<ReadersScreen> {
     super.dispose();
   }
 
-  void _go(CatalogQuery query) => context.go(query.toLocation('/readers', defaultSort: 'lastName'));
+  void _go(CatalogQuery query) =>
+      context.go(query.toLocation('/readers', defaultSort: 'lastName'));
 
   @override
   Widget build(BuildContext context) {
@@ -417,7 +488,9 @@ class _ReadersScreenState extends State<ReadersScreen> {
             _ListFilters(
               search: _search,
               searchLabel: 'Поиск по фамилии или email',
-              showDeleted: context.watch<AuthNotifier>().can(Operation.restoreRecords),
+              showDeleted: context.watch<AuthNotifier>().can(
+                Operation.restoreRecords,
+              ),
               includeDeleted: widget.query.includeDeleted,
               hasSelection: notifier.hasSelection,
               selectedCount: notifier.selected.length,
@@ -427,12 +500,14 @@ class _ReadersScreenState extends State<ReadersScreen> {
                   _go(widget.query.copyWith(search: value));
                 });
               },
-              onDeleted: (value) => _go(widget.query.copyWith(includeDeleted: value)),
+              onDeleted: (value) =>
+                  _go(widget.query.copyWith(includeDeleted: value)),
               onDeleteSelected: () async {
                 final ok = await confirmAction(
                   context,
                   title: 'Удалить выбранных',
-                  message: 'Логическое удаление ${notifier.selected.length} читателей.',
+                  message:
+                      'Логическое удаление ${notifier.selected.length} читателей.',
                 );
                 if (ok) await notifier.deleteSelected();
               },
@@ -440,9 +515,15 @@ class _ReadersScreenState extends State<ReadersScreen> {
             const SizedBox(height: 12),
             Expanded(
               child: ListStatusView(
-                loading: notifier.status == LoadStatus.loading || notifier.status == LoadStatus.idle,
-                empty: notifier.status == LoadStatus.success && notifier.result.items.isEmpty,
-                error: notifier.status == LoadStatus.error ? notifier.error : null,
+                loading:
+                    notifier.status == LoadStatus.loading ||
+                    notifier.status == LoadStatus.idle,
+                empty:
+                    notifier.status == LoadStatus.success &&
+                    notifier.result.items.isEmpty,
+                error: notifier.status == LoadStatus.error
+                    ? notifier.error
+                    : null,
                 onRetry: () => _go(widget.query.copyWith(fail: false)),
                 child: compact
                     ? ListView.separated(
@@ -452,16 +533,26 @@ class _ReadersScreenState extends State<ReadersScreen> {
                           final reader = notifier.result.items[index];
                           return Card(
                             color: reader.isDeleted
-                                ? Theme.of(context).colorScheme.errorContainer.withValues(alpha: 0.4)
+                                ? Theme.of(context).colorScheme.errorContainer
+                                      .withValues(alpha: 0.4)
                                 : null,
                             child: ListTile(
                               leading: Checkbox(
                                 value: notifier.selected.contains(reader.id),
-                                onChanged: (_) => notifier.toggleSelection(reader.id),
+                                onChanged: (_) =>
+                                    notifier.toggleSelection(reader.id),
                               ),
                               title: Text(reader.fullName),
-                              subtitle: Text('${reader.email} · билет ${reader.card.number}'),
-                              trailing: Wrap(children: _readerActions(context, notifier, reader)),
+                              subtitle: Text(
+                                '${reader.email} · билет ${reader.card.number}',
+                              ),
+                              trailing: Wrap(
+                                children: _readerActions(
+                                  context,
+                                  notifier,
+                                  reader,
+                                ),
+                              ),
                             ),
                           );
                         },
@@ -477,15 +568,34 @@ class _ReadersScreenState extends State<ReadersScreen> {
                         onSort: (field) => _go(
                           widget.query.copyWith(
                             sortField: field,
-                            sortAscending: field == widget.query.sortField ? !widget.query.sortAscending : true,
+                            sortAscending: field == widget.query.sortField
+                                ? !widget.query.sortAscending
+                                : true,
                           ),
                         ),
                         columns: [
-                          TableColumnSpec(label: 'Фамилия', sortField: 'lastName', build: (r) => Text(r.lastName)),
-                          TableColumnSpec(label: 'Имя', build: (r) => Text(r.firstName)),
-                          TableColumnSpec(label: 'Email', sortField: 'email', build: (r) => Text(r.email)),
-                          TableColumnSpec(label: 'Телефон', build: (r) => Text(r.phone)),
-                          TableColumnSpec(label: 'Билет', build: (r) => Text(r.card.number)),
+                          TableColumnSpec(
+                            label: 'Фамилия',
+                            sortField: 'lastName',
+                            build: (r) => Text(r.lastName),
+                          ),
+                          TableColumnSpec(
+                            label: 'Имя',
+                            build: (r) => Text(r.firstName),
+                          ),
+                          TableColumnSpec(
+                            label: 'Email',
+                            sortField: 'email',
+                            build: (r) => Text(r.email),
+                          ),
+                          TableColumnSpec(
+                            label: 'Телефон',
+                            build: (r) => Text(r.phone),
+                          ),
+                          TableColumnSpec(
+                            label: 'Билет',
+                            build: (r) => Text(r.card.number),
+                          ),
                           TableColumnSpec(
                             label: 'Билет активен',
                             build: (r) => Text(r.card.active ? 'да' : 'нет'),
@@ -582,9 +692,17 @@ List<Widget> _crudActions({
       onPressed: onEdit,
     ),
     if (isDeleted && canRestore)
-      IconButton(tooltip: 'Восстановить', icon: const Icon(Icons.restore), onPressed: onRestore)
+      IconButton(
+        tooltip: 'Восстановить',
+        icon: const Icon(Icons.restore),
+        onPressed: onRestore,
+      )
     else if (!isDeleted)
-      IconButton(tooltip: 'Логическое удаление', icon: const Icon(Icons.delete_outline), onPressed: () async => onSoft()),
+      IconButton(
+        tooltip: 'Логическое удаление',
+        icon: const Icon(Icons.delete_outline),
+        onPressed: () async => onSoft(),
+      ),
     if (canHardDelete)
       IconButton(
         tooltip: 'Физическое удаление',
@@ -594,7 +712,11 @@ List<Widget> _crudActions({
   ];
 }
 
-List<Widget> _genreActions(BuildContext context, GenreListNotifier notifier, Genre genre) {
+List<Widget> _genreActions(
+  BuildContext context,
+  GenreListNotifier notifier,
+  Genre genre,
+) {
   final auth = context.read<AuthNotifier>();
   return _crudActions(
     isDeleted: genre.isDeleted,
@@ -637,7 +759,8 @@ List<Widget> _publisherActions(
       final ok = await confirmAction(
         context,
         title: 'Логическое удаление',
-        message: 'Издательство «${publisher.name}» исчезнет из обычного списка.',
+        message:
+            'Издательство «${publisher.name}» исчезнет из обычного списка.',
       );
       if (ok) await guarded(() => notifier.softDelete(publisher.id));
     },
@@ -653,7 +776,11 @@ List<Widget> _publisherActions(
   );
 }
 
-List<Widget> _readerActions(BuildContext context, ReaderListNotifier notifier, Reader reader) {
+List<Widget> _readerActions(
+  BuildContext context,
+  ReaderListNotifier notifier,
+  Reader reader,
+) {
   final auth = context.read<AuthNotifier>();
   return _crudActions(
     isDeleted: reader.isDeleted,

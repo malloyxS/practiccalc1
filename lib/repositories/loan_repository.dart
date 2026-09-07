@@ -10,11 +10,12 @@ class LoanRepository {
   LoanRepository(this._dio);
 
   Future<PageResult<Loan>> mine() => guard(() async {
-        final response = await _dio.get<Map<String, dynamic>>('/loans/mine');
-        return _page(response.data ?? const {});
-      });
+    final response = await _dio.get<Map<String, dynamic>>('/loans/mine');
+    return _page(response.data ?? const {});
+  });
 
-  Future<PageResult<Loan>> find({int page = 1, int size = 20}) => guard(() async {
+  Future<PageResult<Loan>> find({int page = 1, int size = 20}) =>
+      guard(() async {
         final response = await _dio.get<Map<String, dynamic>>(
           '/loans',
           queryParameters: {'page': page, 'size': size},
@@ -22,7 +23,8 @@ class LoanRepository {
         return _page(response.data ?? const {});
       });
 
-  Future<Loan> issue({required int bookId, required int readerId}) => guard(() async {
+  Future<Loan> issue({required int bookId, required int readerId}) =>
+      guard(() async {
         final response = await _dio.post<Map<String, dynamic>>(
           '/loans',
           data: {'bookId': bookId, 'readerId': readerId},
@@ -31,14 +33,14 @@ class LoanRepository {
       });
 
   Future<Loan> extend(int id) => guard(() async {
-        final response = await _dio.post<Map<String, dynamic>>('/loans/$id/extend');
-        return Loan.fromJson(response.data ?? const {});
-      });
+    final response = await _dio.post<Map<String, dynamic>>('/loans/$id/extend');
+    return Loan.fromJson(response.data ?? const {});
+  });
 
   Future<Loan> close(int id) => guard(() async {
-        final response = await _dio.post<Map<String, dynamic>>('/loans/$id/return');
-        return Loan.fromJson(response.data ?? const {});
-      });
+    final response = await _dio.post<Map<String, dynamic>>('/loans/$id/return');
+    return Loan.fromJson(response.data ?? const {});
+  });
 
   PageResult<Loan> _page(Map<String, dynamic> data) {
     return PageResult(

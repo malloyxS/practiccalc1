@@ -76,7 +76,9 @@ class _GenreFormScreenState extends State<GenreFormScreen> {
     } on ApiException catch (e) {
       setState(() => _saving = false);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message)));
     }
   }
 
@@ -103,14 +105,23 @@ class _GenreFormScreenState extends State<GenreFormScreen> {
         children: [
           TextFormField(
             controller: _name,
-            decoration: const InputDecoration(labelText: 'Название', border: OutlineInputBorder()),
-            validator: V.all([V.required('Укажите название'), V.length(min: 2, max: 60)]),
+            decoration: const InputDecoration(
+              labelText: 'Название',
+              border: OutlineInputBorder(),
+            ),
+            validator: V.all([
+              V.required('Укажите название'),
+              V.length(min: 2, max: 60),
+            ]),
             onChanged: (_) => _markDirty(),
           ),
           const SizedBox(height: 16),
           TextFormField(
             controller: _description,
-            decoration: const InputDecoration(labelText: 'Описание', border: OutlineInputBorder()),
+            decoration: const InputDecoration(
+              labelText: 'Описание',
+              border: OutlineInputBorder(),
+            ),
             maxLines: 3,
             validator: V.length(max: 400),
             onChanged: (_) => _markDirty(),

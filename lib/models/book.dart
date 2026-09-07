@@ -58,30 +58,36 @@ class Book {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'title': title,
-        'isbn': isbn,
-        'year': year,
-        'pages': pages,
-        'publisherId': publisherId,
-        'authorIds': authorIds,
-        'genreIds': genreIds,
-        'copiesTotal': copiesTotal,
-        'copiesAvailable': copiesAvailable,
-        'deletedAt': deletedAt?.toIso8601String(),
-      };
+    'id': id,
+    'title': title,
+    'isbn': isbn,
+    'year': year,
+    'pages': pages,
+    'publisherId': publisherId,
+    'authorIds': authorIds,
+    'genreIds': genreIds,
+    'copiesTotal': copiesTotal,
+    'copiesAvailable': copiesAvailable,
+    'deletedAt': deletedAt?.toIso8601String(),
+  };
 
   factory Book.fromJson(Map<String, dynamic> json) => Book(
-        id: jsonInt(json['id']),
-        title: jsonString(json['title']),
-        isbn: jsonString(json['isbn']),
-        year: jsonInt(json['year']),
-        pages: jsonInt(json['pages']),
-        publisherId: json['publisherId'] != null ? jsonInt(json['publisherId']) : jsonInt(json['publisher']),
-        authorIds: json['authorIds'] is List ? jsonIntList(json['authorIds']) : jsonIntList(json['authors']),
-        genreIds: json['genreIds'] is List ? jsonIntList(json['genreIds']) : jsonIntList(json['genres']),
-        copiesTotal: jsonInt(json['copiesTotal']),
-        copiesAvailable: jsonInt(json['copiesAvailable']),
-        deletedAt: jsonDate(json['deletedAt']),
-      );
+    id: jsonInt(json['id']),
+    title: jsonString(json['title']),
+    isbn: jsonString(json['isbn']),
+    year: jsonInt(json['year']),
+    pages: jsonInt(json['pages']),
+    publisherId: json['publisherId'] != null
+        ? jsonInt(json['publisherId'])
+        : jsonInt(json['publisher']),
+    authorIds: json['authorIds'] is List
+        ? jsonIntList(json['authorIds'])
+        : jsonIntList(json['authors']),
+    genreIds: json['genreIds'] is List
+        ? jsonIntList(json['genreIds'])
+        : jsonIntList(json['genres']),
+    copiesTotal: jsonInt(json['copiesTotal']),
+    copiesAvailable: jsonInt(json['copiesAvailable']),
+    deletedAt: jsonDate(json['deletedAt']),
+  );
 }

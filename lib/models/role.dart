@@ -40,12 +40,10 @@ bool canPerform(Role role, Operation operation) {
     Operation.manageCatalogs ||
     Operation.manageReaders ||
     Operation.issueLoan ||
-    Operation.closeLoan =>
-      role.level >= Role.librarian.level,
+    Operation.closeLoan => role.level >= Role.librarian.level,
     Operation.hardDelete ||
     Operation.restoreRecords ||
     Operation.manageUsers ||
-    Operation.viewStats =>
-      role == Role.admin,
+    Operation.viewStats => role == Role.admin,
   };
 }

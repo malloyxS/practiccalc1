@@ -34,8 +34,12 @@ class _BooksScreenState extends State<BooksScreen> {
   void initState() {
     super.initState();
     _search = TextEditingController(text: widget.query.search);
-    _yearFrom = TextEditingController(text: widget.query.yearFrom?.toString() ?? '');
-    _yearTo = TextEditingController(text: widget.query.yearTo?.toString() ?? '');
+    _yearFrom = TextEditingController(
+      text: widget.query.yearFrom?.toString() ?? '',
+    );
+    _yearTo = TextEditingController(
+      text: widget.query.yearTo?.toString() ?? '',
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         context.read<BookListNotifier>().applyQuery(widget.query);
@@ -121,7 +125,8 @@ class _BooksScreenState extends State<BooksScreen> {
                   child: DropdownButtonFormField<int?>(
                     key: ValueKey('genre-${widget.query.genreId}'),
                     isExpanded: true,
-                    initialValue: widget.query.genreId != null &&
+                    initialValue:
+                        widget.query.genreId != null &&
                             genres.any((g) => g.id == widget.query.genreId)
                         ? widget.query.genreId
                         : null,
@@ -131,11 +136,18 @@ class _BooksScreenState extends State<BooksScreen> {
                       isDense: true,
                     ),
                     items: [
-                      const DropdownMenuItem(value: null, child: Text('Все жанры')),
+                      const DropdownMenuItem(
+                        value: null,
+                        child: Text('Все жанры'),
+                      ),
                       for (final genre in genres)
-                        DropdownMenuItem(value: genre.id, child: Text(genre.name)),
+                        DropdownMenuItem(
+                          value: genre.id,
+                          child: Text(genre.name),
+                        ),
                     ],
-                    onChanged: (value) => _go(widget.query.copyWith(genreId: value)),
+                    onChanged: (value) =>
+                        _go(widget.query.copyWith(genreId: value)),
                   ),
                 ),
                 SizedBox(
@@ -143,8 +155,11 @@ class _BooksScreenState extends State<BooksScreen> {
                   child: DropdownButtonFormField<int?>(
                     key: ValueKey('publisher-${widget.query.publisherId}'),
                     isExpanded: true,
-                    initialValue: widget.query.publisherId != null &&
-                            publishers.any((p) => p.id == widget.query.publisherId)
+                    initialValue:
+                        widget.query.publisherId != null &&
+                            publishers.any(
+                              (p) => p.id == widget.query.publisherId,
+                            )
                         ? widget.query.publisherId
                         : null,
                     decoration: const InputDecoration(
@@ -153,11 +168,18 @@ class _BooksScreenState extends State<BooksScreen> {
                       isDense: true,
                     ),
                     items: [
-                      const DropdownMenuItem(value: null, child: Text('Все издательства')),
+                      const DropdownMenuItem(
+                        value: null,
+                        child: Text('Все издательства'),
+                      ),
                       for (final publisher in publishers)
-                        DropdownMenuItem(value: publisher.id, child: Text(publisher.name)),
+                        DropdownMenuItem(
+                          value: publisher.id,
+                          child: Text(publisher.name),
+                        ),
                     ],
-                    onChanged: (value) => _go(widget.query.copyWith(publisherId: value)),
+                    onChanged: (value) =>
+                        _go(widget.query.copyWith(publisherId: value)),
                   ),
                 ),
                 SizedBox(
@@ -170,7 +192,9 @@ class _BooksScreenState extends State<BooksScreen> {
                       isDense: true,
                     ),
                     onChanged: (value) => _debounced(
-                      () => _go(widget.query.copyWith(yearFrom: int.tryParse(value))),
+                      () => _go(
+                        widget.query.copyWith(yearFrom: int.tryParse(value)),
+                      ),
                     ),
                   ),
                 ),
@@ -184,7 +208,9 @@ class _BooksScreenState extends State<BooksScreen> {
                       isDense: true,
                     ),
                     onChanged: (value) => _debounced(
-                      () => _go(widget.query.copyWith(yearTo: int.tryParse(value))),
+                      () => _go(
+                        widget.query.copyWith(yearTo: int.tryParse(value)),
+                      ),
                     ),
                   ),
                 ),
@@ -192,7 +218,8 @@ class _BooksScreenState extends State<BooksScreen> {
                   FilterChip(
                     label: const Text('Показывать удалённые'),
                     selected: widget.query.includeDeleted,
-                    onSelected: (value) => _go(widget.query.copyWith(includeDeleted: value)),
+                    onSelected: (value) =>
+                        _go(widget.query.copyWith(includeDeleted: value)),
                   ),
                 if (notifier.hasSelection && auth.can(Operation.manageBooks))
                   FilledButton.tonalIcon(
@@ -206,16 +233,25 @@ class _BooksScreenState extends State<BooksScreen> {
                       if (ok) await notifier.deleteSelected();
                     },
                     icon: const Icon(Icons.delete_outline),
-                    label: Text('Удалить выбранные (${notifier.selected.length})'),
+                    label: Text(
+                      'Удалить выбранные (${notifier.selected.length})',
+                    ),
                   ),
               ],
             ),
             const SizedBox(height: 12),
             Expanded(
               child: ListStatusView(
-                loading: notifier.status == LoadStatus.loading || notifier.status == LoadStatus.idle,
-                empty: notifier.status == LoadStatus.success && notifier.result.items.isEmpty,
-                error: notifier.status == LoadStatus.error ? notifier.error : null,
+                loading:
+                    notifier.status == LoadStatus.loading ||
+                    notifier.status == LoadStatus.idle,
+                empty:
+                    notifier.status == LoadStatus.success &&
+                    notifier.result.items.isEmpty,
+                emptyText: 'Книг не найдено',
+                error: notifier.status == LoadStatus.error
+                    ? notifier.error
+                    : null,
                 onRetry: () => _go(widget.query.copyWith(fail: false)),
                 child: compact
                     ? _BookCards(notifier: notifier, cache: cache)
@@ -236,14 +272,46 @@ class _BooksScreenState extends State<BooksScreen> {
                           ),
                         ),
                         columns: [
-                          TableColumnSpec(label: 'Название', sortField: 'title', build: (b) => Text(b.title)),
-                          TableColumnSpec(label: 'ISBN', build: (b) => Text(b.isbn)),
-                          TableColumnSpec(label: 'Год', sortField: 'year', numeric: true, build: (b) => Text('${b.year}')),
-                          TableColumnSpec(label: 'Страниц', sortField: 'pages', numeric: true, build: (b) => Text('${b.pages}')),
-                          TableColumnSpec(label: 'Издательство', build: (b) => Text(cache.publisherNameOf(b.publisherId))),
-                          TableColumnSpec(label: 'Жанры', build: (b) => Text(cache.genreNamesOf(b.genreIds))),
+                          TableColumnSpec(
+                            label: 'Название',
+                            sortField: 'title',
+                            build: (b) => SizedBox(
+                              width: 220,
+                              child: Text(
+                                b.title,
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              ),
+                            ),
+                          ),
+                          TableColumnSpec(
+                            label: 'ISBN',
+                            build: (b) => Text(b.isbn),
+                          ),
+                          TableColumnSpec(
+                            label: 'Год',
+                            sortField: 'year',
+                            numeric: true,
+                            build: (b) => Text('${b.year}'),
+                          ),
+                          TableColumnSpec(
+                            label: 'Страниц',
+                            sortField: 'pages',
+                            numeric: true,
+                            build: (b) => Text('${b.pages}'),
+                          ),
+                          TableColumnSpec(
+                            label: 'Издательство',
+                            build: (b) =>
+                                Text(cache.publisherNameOf(b.publisherId)),
+                          ),
+                          TableColumnSpec(
+                            label: 'Жанры',
+                            build: (b) => Text(cache.genreNamesOf(b.genreIds)),
+                          ),
                         ],
-                        actions: (b) => _bookActions(context, notifier, b, auth),
+                        actions: (b) =>
+                            _bookActions(context, notifier, b, auth),
                       ),
               ),
             ),
@@ -275,7 +343,9 @@ class _BookCards extends StatelessWidget {
         final book = notifier.result.items[index];
         return Card(
           color: book.isDeleted
-              ? Theme.of(context).colorScheme.errorContainer.withValues(alpha: 0.4)
+              ? Theme.of(
+                  context,
+                ).colorScheme.errorContainer.withValues(alpha: 0.4)
               : null,
           child: ListTile(
             leading: Checkbox(
@@ -284,12 +354,23 @@ class _BookCards extends StatelessWidget {
             ),
             title: Text(
               book.title,
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
               style: book.isDeleted
                   ? const TextStyle(decoration: TextDecoration.lineThrough)
                   : null,
             ),
-            subtitle: Text('${book.year} · ${cache.publisherNameOf(book.publisherId)} · ${cache.genreNamesOf(book.genreIds)}'),
-            trailing: Wrap(children: _bookActions(context, notifier, book, context.read<AuthNotifier>())),
+            subtitle: Text(
+              '${book.year} · ${cache.publisherNameOf(book.publisherId)} · ${cache.genreNamesOf(book.genreIds)}',
+            ),
+            trailing: Wrap(
+              children: _bookActions(
+                context,
+                notifier,
+                book,
+                context.read<AuthNotifier>(),
+              ),
+            ),
             onTap: () => context.go('/books/${book.id}'),
           ),
         );
@@ -330,7 +411,8 @@ List<Widget> _bookActions(
           final ok = await confirmAction(
             context,
             title: 'Логическое удаление',
-            message: 'Запись «${book.title}» исчезнет из обычного списка, но её можно будет восстановить.',
+            message:
+                'Запись «${book.title}» исчезнет из обычного списка, но её можно будет восстановить.',
           );
           if (ok) await notifier.softDelete(book.id);
         },
@@ -343,14 +425,17 @@ List<Widget> _bookActions(
           final ok = await confirmAction(
             context,
             title: 'Физическое удаление',
-            message: 'Запись «${book.title}» будет удалена навсегда. Восстановить её нельзя.',
+            message:
+                'Запись «${book.title}» будет удалена навсегда. Восстановить её нельзя.',
           );
           if (ok) {
             try {
               await notifier.hardDelete(book.id);
             } catch (e) {
               if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text('$e')));
               }
             }
           }

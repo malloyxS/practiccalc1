@@ -58,17 +58,17 @@ const _sampleBook = {
 };
 
 Book _draft({String isbn = '978-0-00-000000-0'}) => Book(
-      id: 0,
-      title: 'Тест',
-      isbn: isbn,
-      year: 2020,
-      pages: 100,
-      publisherId: 1,
-      authorIds: const [1],
-      genreIds: const [1],
-      copiesTotal: 1,
-      copiesAvailable: 1,
-    );
+  id: 0,
+  title: 'Тест',
+  isbn: isbn,
+  year: 2020,
+  pages: 100,
+  publisherId: 1,
+  authorIds: const [1],
+  genreIds: const [1],
+  copiesTotal: 1,
+  copiesAvailable: 1,
+);
 
 void main() {
   test('find разбирает страницу с сервера', () async {
@@ -144,7 +144,13 @@ void main() {
 
     expect(
       () => repo.issue(11),
-      throwsA(isA<ConflictException>().having((e) => e.message, 'message', 'Нет свободных экземпляров')),
+      throwsA(
+        isA<ConflictException>().having(
+          (e) => e.message,
+          'message',
+          'Нет свободных экземпляров',
+        ),
+      ),
     );
   });
 

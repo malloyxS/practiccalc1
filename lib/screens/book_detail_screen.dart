@@ -69,7 +69,11 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
         _issuing = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Выдан экземпляр. Осталось: ${updated.copiesAvailable}')),
+        SnackBar(
+          content: Text(
+            'Выдан экземпляр. Осталось: ${updated.copiesAvailable}',
+          ),
+        ),
       );
     } on ConflictException catch (e) {
       if (!mounted) return;
@@ -90,7 +94,9 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
     } on ApiException catch (e) {
       if (!mounted) return;
       setState(() => _issuing = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message)));
     }
   }
 
@@ -104,7 +110,10 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
     }
     final book = _book;
     if (book == null) {
-      return _Missing(title: 'Карточка книги', message: _error ?? 'Книга не найдена.');
+      return _Missing(
+        title: 'Карточка книги',
+        message: _error ?? 'Книга не найдена.',
+      );
     }
     final cache = context.watch<CatalogCache>();
     final auth = context.watch<AuthNotifier>();
@@ -117,11 +126,20 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
           _InfoRow(label: 'ISBN', value: book.isbn),
           _InfoRow(label: 'Год', value: '${book.year}'),
           _InfoRow(label: 'Страниц', value: '${book.pages}'),
-          _InfoRow(label: 'Издательство', value: cache.publisherNameOf(book.publisherId)),
+          _InfoRow(
+            label: 'Издательство',
+            value: cache.publisherNameOf(book.publisherId),
+          ),
           _InfoRow(label: 'Авторы', value: cache.authorNamesOf(book.authorIds)),
           _InfoRow(label: 'Жанры', value: cache.genreNamesOf(book.genreIds)),
-          _InfoRow(label: 'Экземпляров', value: '${book.copiesAvailable} из ${book.copiesTotal}'),
-          _InfoRow(label: 'Статус', value: book.isDeleted ? 'Логически удалена' : 'Активна'),
+          _InfoRow(
+            label: 'Экземпляров',
+            value: '${book.copiesAvailable} из ${book.copiesTotal}',
+          ),
+          _InfoRow(
+            label: 'Статус',
+            value: book.isDeleted ? 'Логически удалена' : 'Активна',
+          ),
           const SizedBox(height: 24),
           Wrap(
             spacing: 12,
@@ -157,7 +175,10 @@ class AuthorDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (id == null) {
-      return const _Missing(title: 'Карточка автора', message: 'Некорректный идентификатор.');
+      return const _Missing(
+        title: 'Карточка автора',
+        message: 'Некорректный идентификатор.',
+      );
     }
 
     return FutureBuilder<Author?>(
@@ -171,10 +192,15 @@ class AuthorDetailScreen extends StatelessWidget {
         }
         final author = snapshot.data;
         if (author == null) {
-          return const _Missing(title: 'Карточка автора', message: 'Автор не найден.');
+          return const _Missing(
+            title: 'Карточка автора',
+            message: 'Автор не найден.',
+          );
         }
         final cache = context.watch<CatalogCache>();
-        final books = cache.books.where((b) => b.authorIds.contains(author.id)).toList();
+        final books = cache.books
+            .where((b) => b.authorIds.contains(author.id))
+            .toList();
         return Scaffold(
           appBar: buildAppBar(context, author.fullName),
           body: ListView(
@@ -184,9 +210,15 @@ class AuthorDetailScreen extends StatelessWidget {
               _InfoRow(label: 'Имя', value: author.firstName),
               _InfoRow(label: 'Страна', value: author.country),
               _InfoRow(label: 'Год рождения', value: '${author.birthYear}'),
-              _InfoRow(label: 'Статус', value: author.isDeleted ? 'Логически удалён' : 'Активен'),
+              _InfoRow(
+                label: 'Статус',
+                value: author.isDeleted ? 'Логически удалён' : 'Активен',
+              ),
               const SizedBox(height: 16),
-              Text('Книги автора', style: Theme.of(context).textTheme.titleMedium),
+              Text(
+                'Книги автора',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
               const SizedBox(height: 8),
               for (final book in books)
                 ListTile(
@@ -231,7 +263,10 @@ class _InfoRow extends StatelessWidget {
         children: [
           SizedBox(
             width: 160,
-            child: Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+            child: Text(
+              label,
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
           ),
           Expanded(child: Text(value)),
         ],

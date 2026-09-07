@@ -96,10 +96,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                 validator: _numberValidator,
               ),
               const SizedBox(height: 24),
-              FilledButton(
-                onPressed: _submit,
-                child: const Text('Вычислить'),
-              ),
+              FilledButton(onPressed: _submit, child: const Text('Вычислить')),
             ],
           ),
         ),

@@ -10,11 +10,7 @@ class InactivityWatcher extends StatefulWidget {
   final AuthNotifier auth;
   final Widget child;
 
-  const InactivityWatcher({
-    super.key,
-    required this.auth,
-    required this.child,
-  });
+  const InactivityWatcher({super.key, required this.auth, required this.child});
 
   @override
   State<InactivityWatcher> createState() => _InactivityWatcherState();
@@ -83,6 +79,7 @@ class _InactivityWatcherState extends State<InactivityWatcher> {
           barrierDismissible: false,
           useRootNavigator: true,
           builder: (context) => AlertDialog(
+            constraints: const BoxConstraints(maxWidth: 420),
             title: const Text('Сессия скоро завершится'),
             content: Text(
               'Вы не действовали несколько минут. Через $idleWarnSeconds секунд вход будет сброшен.',
@@ -109,7 +106,9 @@ class _InactivityWatcherState extends State<InactivityWatcher> {
     if (!mounted) return;
     await widget.auth.logout();
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override

@@ -65,7 +65,8 @@ class _AuthorsScreenState extends State<AuthorsScreen> {
     final notifier = context.watch<AuthorListNotifier>();
     final cache = context.watch<CatalogCache>();
     final compact = isCompact(context);
-    final countries = cache.authors.map((a) => a.country).toSet().toList()..sort();
+    final countries = cache.authors.map((a) => a.country).toSet().toList()
+      ..sort();
 
     return Scaffold(
       appBar: buildAppBar(context, 'Авторы'),
@@ -106,7 +107,9 @@ class _AuthorsScreenState extends State<AuthorsScreen> {
                   child: DropdownButtonFormField<String?>(
                     key: ValueKey('country-${widget.query.country}'),
                     isExpanded: true,
-                    initialValue: widget.query.country != null && countries.contains(widget.query.country)
+                    initialValue:
+                        widget.query.country != null &&
+                            countries.contains(widget.query.country)
                         ? widget.query.country
                         : null,
                     decoration: const InputDecoration(
@@ -115,18 +118,23 @@ class _AuthorsScreenState extends State<AuthorsScreen> {
                       isDense: true,
                     ),
                     items: [
-                      const DropdownMenuItem(value: null, child: Text('Все страны')),
+                      const DropdownMenuItem(
+                        value: null,
+                        child: Text('Все страны'),
+                      ),
                       for (final country in countries)
                         DropdownMenuItem(value: country, child: Text(country)),
                     ],
-                    onChanged: (value) => _go(widget.query.copyWith(country: value)),
+                    onChanged: (value) =>
+                        _go(widget.query.copyWith(country: value)),
                   ),
                 ),
                 if (context.watch<AuthNotifier>().can(Operation.restoreRecords))
                   FilterChip(
                     label: const Text('Показывать удалённые'),
                     selected: widget.query.includeDeleted,
-                    onSelected: (value) => _go(widget.query.copyWith(includeDeleted: value)),
+                    onSelected: (value) =>
+                        _go(widget.query.copyWith(includeDeleted: value)),
                   ),
                 if (notifier.hasSelection)
                   FilledButton.tonalIcon(
@@ -140,16 +148,24 @@ class _AuthorsScreenState extends State<AuthorsScreen> {
                       if (ok) await notifier.deleteSelected();
                     },
                     icon: const Icon(Icons.delete_outline),
-                    label: Text('Удалить выбранные (${notifier.selected.length})'),
+                    label: Text(
+                      'Удалить выбранные (${notifier.selected.length})',
+                    ),
                   ),
               ],
             ),
             const SizedBox(height: 12),
             Expanded(
               child: ListStatusView(
-                loading: notifier.status == LoadStatus.loading || notifier.status == LoadStatus.idle,
-                empty: notifier.status == LoadStatus.success && notifier.result.items.isEmpty,
-                error: notifier.status == LoadStatus.error ? notifier.error : null,
+                loading:
+                    notifier.status == LoadStatus.loading ||
+                    notifier.status == LoadStatus.idle,
+                empty:
+                    notifier.status == LoadStatus.success &&
+                    notifier.result.items.isEmpty,
+                error: notifier.status == LoadStatus.error
+                    ? notifier.error
+                    : null,
                 onRetry: () => _go(widget.query.copyWith(fail: false)),
                 child: compact
                     ? ListView.separated(
@@ -159,21 +175,33 @@ class _AuthorsScreenState extends State<AuthorsScreen> {
                           final author = notifier.result.items[index];
                           return Card(
                             color: author.isDeleted
-                                ? Theme.of(context).colorScheme.errorContainer.withValues(alpha: 0.4)
+                                ? Theme.of(context).colorScheme.errorContainer
+                                      .withValues(alpha: 0.4)
                                 : null,
                             child: ListTile(
                               leading: Checkbox(
                                 value: notifier.selected.contains(author.id),
-                                onChanged: (_) => notifier.toggleSelection(author.id),
+                                onChanged: (_) =>
+                                    notifier.toggleSelection(author.id),
                               ),
                               title: Text(
                                 author.fullName,
                                 style: author.isDeleted
-                                    ? const TextStyle(decoration: TextDecoration.lineThrough)
+                                    ? const TextStyle(
+                                        decoration: TextDecoration.lineThrough,
+                                      )
                                     : null,
                               ),
-                              subtitle: Text('${author.country}, ${author.birthYear}'),
-                              trailing: Wrap(children: _authorActions(context, notifier, author)),
+                              subtitle: Text(
+                                '${author.country}, ${author.birthYear}',
+                              ),
+                              trailing: Wrap(
+                                children: _authorActions(
+                                  context,
+                                  notifier,
+                                  author,
+                                ),
+                              ),
                               onTap: () => context.go('/authors/${author.id}'),
                             ),
                           );
@@ -196,9 +224,20 @@ class _AuthorsScreenState extends State<AuthorsScreen> {
                           ),
                         ),
                         columns: [
-                          TableColumnSpec(label: 'Фамилия', sortField: 'lastName', build: (a) => Text(a.lastName)),
-                          TableColumnSpec(label: 'Имя', build: (a) => Text(a.firstName)),
-                          TableColumnSpec(label: 'Страна', sortField: 'country', build: (a) => Text(a.country)),
+                          TableColumnSpec(
+                            label: 'Фамилия',
+                            sortField: 'lastName',
+                            build: (a) => Text(a.lastName),
+                          ),
+                          TableColumnSpec(
+                            label: 'Имя',
+                            build: (a) => Text(a.firstName),
+                          ),
+                          TableColumnSpec(
+                            label: 'Страна',
+                            sortField: 'country',
+                            build: (a) => Text(a.country),
+                          ),
                           TableColumnSpec(
                             label: 'Год рождения',
                             sortField: 'birthYear',

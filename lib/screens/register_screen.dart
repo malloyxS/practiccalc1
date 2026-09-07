@@ -28,10 +28,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _saving = true);
     try {
       await context.read<AuthNotifier>().register(
-            username: _username.text.trim(),
-            password: _password.text,
-            displayName: _name.text.trim(),
-          );
+        username: _username.text.trim(),
+        password: _password.text,
+        displayName: _name.text.trim(),
+      );
       if (!mounted) return;
       context.go('/');
     } on ValidationException catch (e) {
@@ -70,20 +70,35 @@ class _RegisterScreenState extends State<RegisterScreen> {
             children: [
               TextFormField(
                 controller: _name,
-                decoration: const InputDecoration(labelText: 'Имя', border: OutlineInputBorder()),
-                validator: V.all([V.required('Укажите имя'), V.length(min: 2, max: 80)]),
+                decoration: const InputDecoration(
+                  labelText: 'Имя',
+                  border: OutlineInputBorder(),
+                ),
+                validator: V.all([
+                  V.required('Укажите имя'),
+                  V.length(min: 2, max: 80),
+                ]),
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _username,
-                decoration: const InputDecoration(labelText: 'Логин', border: OutlineInputBorder()),
-                validator: V.all([V.required('Укажите логин'), V.length(min: 3, max: 40)]),
+                decoration: const InputDecoration(
+                  labelText: 'Логин',
+                  border: OutlineInputBorder(),
+                ),
+                validator: V.all([
+                  V.required('Укажите логин'),
+                  V.length(min: 3, max: 40),
+                ]),
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _password,
                 obscureText: true,
-                decoration: const InputDecoration(labelText: 'Пароль', border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                  labelText: 'Пароль',
+                  border: OutlineInputBorder(),
+                ),
                 validator: V.all([V.required('Укажите пароль'), V.password()]),
                 onChanged: (_) => setState(() {}),
               ),
@@ -93,7 +108,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
               _Rule(ok: rules.hasSpecial, text: 'Есть специальный символ'),
               if (_error != null) ...[
                 const SizedBox(height: 12),
-                Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                Text(
+                  _error!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
               ],
               const SizedBox(height: 24),
               FilledButton(
@@ -125,7 +143,11 @@ class _Rule extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 4),
       child: Row(
         children: [
-          Icon(ok ? Icons.check_circle : Icons.radio_button_unchecked, size: 18, color: ok ? Colors.green : null),
+          Icon(
+            ok ? Icons.check_circle : Icons.radio_button_unchecked,
+            size: 18,
+            color: ok ? Colors.green : null,
+          ),
           const SizedBox(width: 8),
           Text(text),
         ],

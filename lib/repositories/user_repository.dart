@@ -36,21 +36,24 @@ class UserRepository {
   UserRepository(this._dio);
 
   Future<List<AppUser>> find() => guard(() async {
-        final response = await _dio.get<Map<String, dynamic>>('/users');
-        final items = response.data?['items'] as List? ?? const [];
-        return items.whereType<Map>().map((item) => AppUser.fromJson(Map<String, dynamic>.from(item))).toList();
-      });
+    final response = await _dio.get<Map<String, dynamic>>('/users');
+    final items = response.data?['items'] as List? ?? const [];
+    return items
+        .whereType<Map>()
+        .map((item) => AppUser.fromJson(Map<String, dynamic>.from(item)))
+        .toList();
+  });
 
   Future<AppUser> updateRole(int id, Role role) => guard(() async {
-        final response = await _dio.put<Map<String, dynamic>>(
-          '/users/$id',
-          data: {'role': role.id},
-        );
-        return AppUser.fromJson(response.data ?? const {});
-      });
+    final response = await _dio.put<Map<String, dynamic>>(
+      '/users/$id',
+      data: {'role': role.id},
+    );
+    return AppUser.fromJson(response.data ?? const {});
+  });
 
   Future<LibraryStats> stats() => guard(() async {
-        final response = await _dio.get<Map<String, dynamic>>('/stats');
-        return LibraryStats.fromJson(response.data ?? const {});
-      });
+    final response = await _dio.get<Map<String, dynamic>>('/stats');
+    return LibraryStats.fromJson(response.data ?? const {});
+  });
 }

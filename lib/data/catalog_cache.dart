@@ -18,10 +18,10 @@ class CatalogCache extends ChangeNotifier {
     required GenreRepository genres,
     required PublisherRepository publishers,
     required BookRepository books,
-  })  : _authors = authors,
-        _genres = genres,
-        _publishers = publishers,
-        _books = books;
+  }) : _authors = authors,
+       _genres = genres,
+       _publishers = publishers,
+       _books = books;
 
   List<Author> authors = [];
   List<Genre> genres = [];
@@ -70,11 +70,13 @@ class CatalogCache extends ChangeNotifier {
     return null;
   }
 
-  String genreNamesOf(List<int> ids) => ids.map((id) => genreById(id)?.name ?? '$id').join(', ');
+  String genreNamesOf(List<int> ids) =>
+      ids.map((id) => genreById(id)?.name ?? '$id').join(', ');
 
   String publisherNameOf(int id) => publisherById(id)?.name ?? '$id';
 
-  String authorNamesOf(List<int> ids) => ids.map((id) => authorById(id)?.fullName ?? '$id').join(', ');
+  String authorNamesOf(List<int> ids) =>
+      ids.map((id) => authorById(id)?.fullName ?? '$id').join(', ');
 
   int booksCountForPublisher(int publisherId) =>
       books.where((b) => b.publisherId == publisherId && !b.isDeleted).length;
@@ -82,7 +84,10 @@ class CatalogCache extends ChangeNotifier {
   List<Author> authorsForPublisher(int? publisherId) {
     final active = authors.where((a) => !a.isDeleted).toList();
     if (publisherId == null) return active;
-    final ids = books.where((b) => b.publisherId == publisherId).expand((b) => b.authorIds).toSet();
+    final ids = books
+        .where((b) => b.publisherId == publisherId)
+        .expand((b) => b.authorIds)
+        .toSet();
     final filtered = active.where((a) => ids.contains(a.id)).toList();
     return filtered.isEmpty ? active : filtered;
   }
@@ -90,7 +95,10 @@ class CatalogCache extends ChangeNotifier {
   List<Genre> genresForPublisher(int? publisherId) {
     final active = genres.where((g) => !g.isDeleted).toList();
     if (publisherId == null) return active;
-    final ids = books.where((b) => b.publisherId == publisherId).expand((b) => b.genreIds).toSet();
+    final ids = books
+        .where((b) => b.publisherId == publisherId)
+        .expand((b) => b.genreIds)
+        .toSet();
     final filtered = active.where((g) => ids.contains(g.id)).toList();
     return filtered.isEmpty ? active : filtered;
   }

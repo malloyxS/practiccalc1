@@ -34,9 +34,14 @@ PreferredSizeWidget buildAppBar(
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8),
           child: Center(
-            child: Text(
-              '${auth.user!.displayName} · ${auth.uiRole.title}',
-              style: const TextStyle(fontSize: 13),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 180),
+              child: Text(
+                '${auth.user!.displayName} · ${auth.uiRole.title}',
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+                style: const TextStyle(fontSize: 13),
+              ),
             ),
           ),
         ),
@@ -62,11 +67,7 @@ class NarrowBody extends StatelessWidget {
   final Widget child;
   final double maxWidth;
 
-  const NarrowBody({
-    super.key,
-    required this.child,
-    this.maxWidth = 420,
-  });
+  const NarrowBody({super.key, required this.child, this.maxWidth = 420});
 
   @override
   Widget build(BuildContext context) {

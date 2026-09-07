@@ -82,7 +82,9 @@ class _AuthorFormScreenState extends State<AuthorFormScreen> {
     } on ApiException catch (e) {
       setState(() => _saving = false);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message)));
     }
   }
 
@@ -111,28 +113,49 @@ class _AuthorFormScreenState extends State<AuthorFormScreen> {
         children: [
           TextFormField(
             controller: _lastName,
-            decoration: const InputDecoration(labelText: 'Фамилия', border: OutlineInputBorder()),
-            validator: V.all([V.required('Укажите фамилию'), V.length(min: 2, max: 80)]),
+            decoration: const InputDecoration(
+              labelText: 'Фамилия',
+              border: OutlineInputBorder(),
+            ),
+            validator: V.all([
+              V.required('Укажите фамилию'),
+              V.length(min: 2, max: 80),
+            ]),
             onChanged: (_) => _markDirty(),
           ),
           const SizedBox(height: 16),
           TextFormField(
             controller: _firstName,
-            decoration: const InputDecoration(labelText: 'Имя', border: OutlineInputBorder()),
-            validator: V.all([V.required('Укажите имя'), V.length(min: 2, max: 80)]),
+            decoration: const InputDecoration(
+              labelText: 'Имя',
+              border: OutlineInputBorder(),
+            ),
+            validator: V.all([
+              V.required('Укажите имя'),
+              V.length(min: 2, max: 80),
+            ]),
             onChanged: (_) => _markDirty(),
           ),
           const SizedBox(height: 16),
           TextFormField(
             controller: _country,
-            decoration: const InputDecoration(labelText: 'Страна', border: OutlineInputBorder()),
-            validator: V.all([V.required('Укажите страну'), V.length(min: 2, max: 80)]),
+            decoration: const InputDecoration(
+              labelText: 'Страна',
+              border: OutlineInputBorder(),
+            ),
+            validator: V.all([
+              V.required('Укажите страну'),
+              V.length(min: 2, max: 80),
+            ]),
             onChanged: (_) => _markDirty(),
           ),
           const SizedBox(height: 16),
           TextFormField(
             controller: _birthYear,
-            decoration: const InputDecoration(labelText: 'Год рождения', border: OutlineInputBorder()),
+            decoration: const InputDecoration(
+              labelText: 'Год рождения',
+              border: OutlineInputBorder(),
+            ),
             validator: V.all([V.required(), V.integer(min: 1400, max: 2020)]),
             onChanged: (_) => _markDirty(),
           ),

@@ -9,14 +9,17 @@ class InMemoryBookRepository implements BookRepository {
 
   InMemoryBookRepository(this.store);
 
-  Future<void> _delay() => Future<void>.delayed(const Duration(milliseconds: 250));
+  Future<void> _delay() =>
+      Future<void>.delayed(const Duration(milliseconds: 250));
 
   @override
   Future<PageResult<Book>> find(BookQuery q) async {
     await _delay();
     if (q.fail) throw StateError('учебная ошибка загрузки');
 
-    var rows = store.books.where((b) => q.includeDeleted || !b.isDeleted).toList();
+    var rows = store.books
+        .where((b) => q.includeDeleted || !b.isDeleted)
+        .toList();
     if (q.search.trim().isNotEmpty) {
       final needle = q.search.trim().toLowerCase();
       rows = rows

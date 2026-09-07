@@ -54,7 +54,9 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
       await _load();
     } on ApiException catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message)));
     }
   }
 
@@ -156,7 +158,10 @@ class _AdminStatsScreenState extends State<AdminStatsScreen> {
                     _StatTile(label: 'Книг', value: '${stats.books}'),
                     _StatTile(label: 'Авторов', value: '${stats.authors}'),
                     _StatTile(label: 'Читателей', value: '${stats.readers}'),
-                    _StatTile(label: 'Активных выдач', value: '${stats.activeLoans}'),
+                    _StatTile(
+                      label: 'Активных выдач',
+                      value: '${stats.activeLoans}',
+                    ),
                     _StatTile(label: 'Учёток', value: '${stats.users}'),
                   ],
                 ),

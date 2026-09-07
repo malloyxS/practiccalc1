@@ -28,7 +28,10 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _saving = true);
     try {
-      await context.read<AuthNotifier>().login(_username.text.trim(), _password.text);
+      await context.read<AuthNotifier>().login(
+        _username.text.trim(),
+        _password.text,
+      );
       if (!mounted) return;
       final next = widget.from;
       context.go(next != null && next.isNotEmpty ? next : '/');
@@ -63,26 +66,42 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('Учебная библиотека', style: Theme.of(context).textTheme.headlineSmall, textAlign: TextAlign.center),
+              Text(
+                'Учебная библиотека',
+                style: Theme.of(context).textTheme.headlineSmall,
+                textAlign: TextAlign.center,
+              ),
               const SizedBox(height: 8),
-              const Text('Войдите, чтобы открыть каталог и свои разделы.', textAlign: TextAlign.center),
+              const Text(
+                'Войдите, чтобы открыть каталог и свои разделы.',
+                textAlign: TextAlign.center,
+              ),
               const SizedBox(height: 24),
               TextFormField(
                 controller: _username,
-                decoration: const InputDecoration(labelText: 'Логин', border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                  labelText: 'Логин',
+                  border: OutlineInputBorder(),
+                ),
                 validator: V.required('Укажите логин'),
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _password,
                 obscureText: true,
-                decoration: const InputDecoration(labelText: 'Пароль', border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                  labelText: 'Пароль',
+                  border: OutlineInputBorder(),
+                ),
                 validator: V.required('Укажите пароль'),
                 onFieldSubmitted: (_) => _submit(),
               ),
               if (_error != null) ...[
                 const SizedBox(height: 12),
-                Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                Text(
+                  _error!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
               ],
               const SizedBox(height: 24),
               FilledButton(

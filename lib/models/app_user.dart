@@ -26,12 +26,12 @@ class AppUser {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'username': username,
-        'displayName': displayName,
-        'role': role.id,
-        'readerId': readerId,
-      };
+    'id': id,
+    'username': username,
+    'displayName': displayName,
+    'role': role.id,
+    'readerId': readerId,
+  };
 }
 
 class AuthTokens {
@@ -49,7 +49,9 @@ class AuthTokens {
     return AuthTokens(
       accessToken: '${json['accessToken'] ?? ''}',
       refreshToken: '${json['refreshToken'] ?? ''}',
-      user: AppUser.fromJson(Map<String, dynamic>.from(json['user'] as Map? ?? const {})),
+      user: AppUser.fromJson(
+        Map<String, dynamic>.from(json['user'] as Map? ?? const {}),
+      ),
     );
   }
 }

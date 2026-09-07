@@ -29,16 +29,14 @@ class _CalculatorResult extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final result = calculate(query['a'], query['op'], query['b']);
-    final expression = '${query['a'] ?? '?'} ${query['op'] ?? '?'} ${query['b'] ?? '?'}';
+    final expression =
+        '${query['a'] ?? '?'} ${query['op'] ?? '?'} ${query['b'] ?? '?'}';
 
     return switch (result) {
       CalcSuccess(:final value) => _ResultScaffold(
         title: 'Результат вычисления',
         backPath: '/calculator',
-        child: _SuccessCard(
-          headline: expression,
-          value: formatNumber(value),
-        ),
+        child: _SuccessCard(headline: expression, value: formatNumber(value)),
       ),
       CalcFailure(:final message) => _ResultScaffold(
         title: 'Результат вычисления',
@@ -68,8 +66,7 @@ class _ConverterResult extends StatelessWidget {
           title: 'Результат конвертации',
           backPath: '/converter',
           child: _SuccessCard(
-            headline:
-                '${formatNumber(amount)} ${from.code} → ${to.code}',
+            headline: '${formatNumber(amount)} ${from.code} → ${to.code}',
             value: '${formatNumber(value)} ${to.code}',
           ),
         ),

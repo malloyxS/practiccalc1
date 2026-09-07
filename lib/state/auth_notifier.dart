@@ -38,7 +38,8 @@ class AuthNotifier extends ChangeNotifier {
   bool get isLibrarian => uiRole == Role.librarian;
   bool get isAdmin => uiRole == Role.admin;
 
-  bool can(Operation operation) => isAuthenticated && canPerform(uiRole, operation);
+  bool can(Operation operation) =>
+      isAuthenticated && canPerform(uiRole, operation);
 
   Future<void> restore() async {
     final access = _prefs.getString(kAccess);
@@ -120,7 +121,16 @@ class AuthNotifier extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> _apply(AuthTokens result, {bool keepSessionStart = false}) async {
+  @visibleForTesting
+  void debugAssign(AppUser user) {
+    _user = user;
+    notifyListeners();
+  }
+
+  Future<void> _apply(
+    AuthTokens result, {
+    bool keepSessionStart = false,
+  }) async {
     _accessToken = result.accessToken;
     _refreshToken = result.refreshToken;
     _user = result.user;
@@ -151,13 +161,15 @@ class AuthNotifier extends ChangeNotifier {
   bool idleExpired({Duration? timeout}) {
     final last = lastActivity;
     if (last == null) return false;
-    return DateTime.now().difference(last) >= (timeout ?? const Duration(seconds: idleSeconds));
+    return DateTime.now().difference(last) >=
+        (timeout ?? const Duration(seconds: idleSeconds));
   }
 
   bool _sessionExpired() {
     final started = sessionStartedAt;
     if (started == null) return false;
-    return DateTime.now().difference(started) >= const Duration(seconds: sessionMaxSeconds);
+    return DateTime.now().difference(started) >=
+        const Duration(seconds: sessionMaxSeconds);
   }
 
   bool get sessionExpired => _sessionExpired();

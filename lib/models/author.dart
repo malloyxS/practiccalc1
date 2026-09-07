@@ -40,22 +40,22 @@ class Author {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'lastName': lastName,
-        'firstName': firstName,
-        'country': country,
-        'birthYear': birthYear,
-        'deletedAt': deletedAt?.toIso8601String(),
-      };
+    'id': id,
+    'lastName': lastName,
+    'firstName': firstName,
+    'country': country,
+    'birthYear': birthYear,
+    'deletedAt': deletedAt?.toIso8601String(),
+  };
 
   factory Author.fromJson(Map<String, dynamic> json) => Author(
-        id: jsonInt(json['id']),
-        lastName: jsonString(json['lastName']),
-        firstName: jsonString(json['firstName']),
-        country: jsonString(json['country']),
-        birthYear: jsonInt(json['birthYear']),
-        deletedAt: jsonDate(json['deletedAt']),
-      );
+    id: jsonInt(json['id']),
+    lastName: jsonString(json['lastName']),
+    firstName: jsonString(json['firstName']),
+    country: jsonString(json['country']),
+    birthYear: jsonInt(json['birthYear']),
+    deletedAt: jsonDate(json['deletedAt']),
+  );
 }
 
 class Genre {
@@ -88,18 +88,18 @@ class Genre {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'description': description,
-        'deletedAt': deletedAt?.toIso8601String(),
-      };
+    'id': id,
+    'name': name,
+    'description': description,
+    'deletedAt': deletedAt?.toIso8601String(),
+  };
 
   factory Genre.fromJson(Map<String, dynamic> json) => Genre(
-        id: jsonInt(json['id']),
-        name: jsonString(json['name']),
-        description: jsonString(json['description']),
-        deletedAt: jsonDate(json['deletedAt']),
-      );
+    id: jsonInt(json['id']),
+    name: jsonString(json['name']),
+    description: jsonString(json['description']),
+    deletedAt: jsonDate(json['deletedAt']),
+  );
 }
 
 class Publisher {
@@ -136,18 +136,18 @@ class Publisher {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'city': city,
-        'foundedYear': foundedYear,
-        'deletedAt': deletedAt?.toIso8601String(),
-      };
+    'id': id,
+    'name': name,
+    'city': city,
+    'foundedYear': foundedYear,
+    'deletedAt': deletedAt?.toIso8601String(),
+  };
 
   factory Publisher.fromJson(Map<String, dynamic> json) => Publisher(
-        id: jsonInt(json['id']),
-        name: jsonString(json['name']),
-        city: jsonString(json['city']),
-        foundedYear: jsonInt(json['foundedYear'], 1990),
-        deletedAt: jsonDate(json['deletedAt']),
-      );
+    id: jsonInt(json['id']),
+    name: jsonString(json['name']),
+    city: jsonString(json['city']),
+    foundedYear: jsonInt(json['foundedYear'], 1990),
+    deletedAt: jsonDate(json['deletedAt']),
+  );
 }

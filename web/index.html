@@ -1,38 +1,50 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
   <base href="$FLUTTER_BASE_HREF">
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="Калькулятор и конвертер валют на Flutter Web.">
-
-  <!-- iOS meta tags & icons -->
+  <meta name="description" content="Учебная библиотека на Flutter Web.">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="calc_web">
+  <meta name="apple-mobile-web-app-title" content="Учебная библиотека">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
-
-  <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
-
-  <title>Калькулятор и конвертер</title>
+  <title>Учебная библиотека</title>
   <link rel="manifest" href="manifest.json">
+  <style>
+    html, body { height: 100%; margin: 0; }
+    body { background: #eef0f8; font-family: Segoe UI, Roboto, sans-serif; }
+    #app-splash {
+      position: fixed; inset: 0; z-index: 9999;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: #eef0f8; color: #2c2f48;
+    }
+    #app-splash h1 { font-size: 28px; font-weight: 600; margin: 0 0 24px; }
+    .loader {
+      width: 36px; height: 36px; border-radius: 50%;
+      border: 3px solid #c5c8d8; border-top-color: #3949ab;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
 </head>
 <body>
+  <div id="app-splash">
+    <h1>Учебная библиотека</h1>
+    <div class="loader" role="progressbar" aria-label="Загрузка приложения"></div>
+  </div>
+  <script>
+    const hideSplash = () => document.getElementById('app-splash')?.remove();
+    const watch = new MutationObserver(() => {
+      if (document.querySelector('flutter-view') || document.querySelector('flt-glass-pane')) {
+        hideSplash();
+        watch.disconnect();
+      }
+    });
+    watch.observe(document.body, { childList: true, subtree: true });
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

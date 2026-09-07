@@ -41,7 +41,8 @@ class BookQuery {
       sortAscending: parts.length < 2 || parts[1] != 'desc',
       page: int.tryParse(q['page'] ?? '') ?? 1,
       size: int.tryParse(q['size'] ?? '') ?? 10,
-      includeDeleted: q['includeDeleted'] == '1' || q['includeDeleted'] == 'true',
+      includeDeleted:
+          q['includeDeleted'] == '1' || q['includeDeleted'] == 'true',
       fail: q['fail'] == '1' || (q['__fail'] ?? '').isNotEmpty,
       delayMs: int.tryParse(q['__delay'] ?? ''),
     );
@@ -62,7 +63,10 @@ class BookQuery {
     if (includeDeleted) params['includeDeleted'] = '1';
     if (fail) params['fail'] = '1';
     if (delayMs != null) params['__delay'] = '$delayMs';
-    return Uri(path: path, queryParameters: params.isEmpty ? null : params).toString();
+    return Uri(
+      path: path,
+      queryParameters: params.isEmpty ? null : params,
+    ).toString();
   }
 
   BookQuery copyWith({
@@ -82,7 +86,9 @@ class BookQuery {
     return BookQuery(
       search: search ?? this.search,
       genreId: genreId == _unset ? this.genreId : genreId as int?,
-      publisherId: publisherId == _unset ? this.publisherId : publisherId as int?,
+      publisherId: publisherId == _unset
+          ? this.publisherId
+          : publisherId as int?,
       yearFrom: yearFrom == _unset ? this.yearFrom : yearFrom as int?,
       yearTo: yearTo == _unset ? this.yearTo : yearTo as int?,
       sortField: sortField ?? this.sortField,
@@ -116,19 +122,19 @@ class BookQuery {
 
   @override
   int get hashCode => Object.hash(
-        search,
-        genreId,
-        publisherId,
-        yearFrom,
-        yearTo,
-        sortField,
-        sortAscending,
-        page,
-        size,
-        includeDeleted,
-        fail,
-        delayMs,
-      );
+    search,
+    genreId,
+    publisherId,
+    yearFrom,
+    yearTo,
+    sortField,
+    sortAscending,
+    page,
+    size,
+    includeDeleted,
+    fail,
+    delayMs,
+  );
 }
 
 class AuthorQuery {
@@ -159,11 +165,14 @@ class AuthorQuery {
     return AuthorQuery(
       search: q['search'] ?? '',
       country: (q['country'] ?? '').isEmpty ? null : q['country'],
-      sortField: parts.isEmpty || parts.first.isEmpty ? 'lastName' : parts.first,
+      sortField: parts.isEmpty || parts.first.isEmpty
+          ? 'lastName'
+          : parts.first,
       sortAscending: parts.length < 2 || parts[1] != 'desc',
       page: int.tryParse(q['page'] ?? '') ?? 1,
       size: int.tryParse(q['size'] ?? '') ?? 10,
-      includeDeleted: q['includeDeleted'] == '1' || q['includeDeleted'] == 'true',
+      includeDeleted:
+          q['includeDeleted'] == '1' || q['includeDeleted'] == 'true',
       fail: q['fail'] == '1',
     );
   }
@@ -179,7 +188,10 @@ class AuthorQuery {
     if (size != 10) params['size'] = '$size';
     if (includeDeleted) params['includeDeleted'] = '1';
     if (fail) params['fail'] = '1';
-    return Uri(path: path, queryParameters: params.isEmpty ? null : params).toString();
+    return Uri(
+      path: path,
+      queryParameters: params.isEmpty ? null : params,
+    ).toString();
   }
 
   AuthorQuery copyWith({
@@ -221,15 +233,15 @@ class AuthorQuery {
 
   @override
   int get hashCode => Object.hash(
-        search,
-        country,
-        sortField,
-        sortAscending,
-        page,
-        size,
-        includeDeleted,
-        fail,
-      );
+    search,
+    country,
+    sortField,
+    sortAscending,
+    page,
+    size,
+    includeDeleted,
+    fail,
+  );
 }
 
 class CatalogQuery {
@@ -257,11 +269,14 @@ class CatalogQuery {
     final parts = sort.split(',');
     return CatalogQuery(
       search: q['search'] ?? '',
-      sortField: parts.isEmpty || parts.first.isEmpty ? defaultSort : parts.first,
+      sortField: parts.isEmpty || parts.first.isEmpty
+          ? defaultSort
+          : parts.first,
       sortAscending: parts.length < 2 || parts[1] != 'desc',
       page: int.tryParse(q['page'] ?? '') ?? 1,
       size: int.tryParse(q['size'] ?? '') ?? 10,
-      includeDeleted: q['includeDeleted'] == '1' || q['includeDeleted'] == 'true',
+      includeDeleted:
+          q['includeDeleted'] == '1' || q['includeDeleted'] == 'true',
       fail: q['fail'] == '1',
     );
   }
@@ -276,7 +291,10 @@ class CatalogQuery {
     if (size != 10) params['size'] = '$size';
     if (includeDeleted) params['includeDeleted'] = '1';
     if (fail) params['fail'] = '1';
-    return Uri(path: path, queryParameters: params.isEmpty ? null : params).toString();
+    return Uri(
+      path: path,
+      queryParameters: params.isEmpty ? null : params,
+    ).toString();
   }
 
   CatalogQuery copyWith({
@@ -312,5 +330,13 @@ class CatalogQuery {
   }
 
   @override
-  int get hashCode => Object.hash(search, sortField, sortAscending, page, size, includeDeleted, fail);
+  int get hashCode => Object.hash(
+    search,
+    sortField,
+    sortAscending,
+    page,
+    size,
+    includeDeleted,
+    fail,
+  );
 }

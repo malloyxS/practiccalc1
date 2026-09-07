@@ -73,7 +73,9 @@ class _BookFormScreenState extends State<BookFormScreen> {
     } on ApiException catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message)));
     }
   }
 
@@ -89,7 +91,11 @@ class _BookFormScreenState extends State<BookFormScreen> {
     final copiesAvailable = int.parse(_copiesAvailable.text.trim());
     if (copiesAvailable > copiesTotal) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Доступно экземпляров не может быть больше общего числа')),
+        const SnackBar(
+          content: Text(
+            'Доступно экземпляров не может быть больше общего числа',
+          ),
+        ),
       );
       return;
     }
@@ -129,7 +135,9 @@ class _BookFormScreenState extends State<BookFormScreen> {
     } on ApiException catch (e) {
       setState(() => _saving = false);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message)));
     }
   }
 
@@ -165,14 +173,23 @@ class _BookFormScreenState extends State<BookFormScreen> {
         children: [
           TextFormField(
             controller: _title,
-            decoration: const InputDecoration(labelText: 'Название', border: OutlineInputBorder()),
-            validator: V.all([V.required('Укажите название'), V.length(min: 2, max: 200)]),
+            decoration: const InputDecoration(
+              labelText: 'Название',
+              border: OutlineInputBorder(),
+            ),
+            validator: V.all([
+              V.required('Укажите название'),
+              V.length(min: 2, max: 200),
+            ]),
             onChanged: (_) => _markDirty(),
           ),
           const SizedBox(height: 16),
           TextFormField(
             controller: _isbn,
-            decoration: const InputDecoration(labelText: 'ISBN', border: OutlineInputBorder()),
+            decoration: const InputDecoration(
+              labelText: 'ISBN',
+              border: OutlineInputBorder(),
+            ),
             validator: V.all([
               V.required('Укажите ISBN'),
               V.isbn(),
@@ -184,36 +201,71 @@ class _BookFormScreenState extends State<BookFormScreen> {
             },
           ),
           const SizedBox(height: 16),
-          TextFormField(
-            controller: _year,
-            decoration: const InputDecoration(labelText: 'Год издания', border: OutlineInputBorder()),
-            validator: V.all([V.required(), V.integer(min: 1450, max: 2100)]),
-            onChanged: (_) => _markDirty(),
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            controller: _pages,
-            decoration: const InputDecoration(labelText: 'Страниц', border: OutlineInputBorder()),
-            validator: V.all([V.required(), V.integer(min: 1)]),
-            onChanged: (_) => _markDirty(),
+          Wrap(
+            spacing: 16,
+            runSpacing: 16,
+            children: [
+              SizedBox(
+                width: 160,
+                child: TextFormField(
+                  controller: _year,
+                  decoration: const InputDecoration(
+                    labelText: 'Год издания',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: V.all([
+                    V.required(),
+                    V.integer(min: 1450, max: 2100),
+                  ]),
+                  onChanged: (_) => _markDirty(),
+                ),
+              ),
+              SizedBox(
+                width: 160,
+                child: TextFormField(
+                  controller: _pages,
+                  decoration: const InputDecoration(
+                    labelText: 'Страниц',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: V.all([V.required(), V.integer(min: 1)]),
+                  onChanged: (_) => _markDirty(),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
           DropdownButtonFormField<int>(
-            initialValue: publishers.any((p) => p.id == _publisherId) ? _publisherId : null,
-            decoration: const InputDecoration(labelText: 'Издательство', border: OutlineInputBorder()),
+            initialValue: publishers.any((p) => p.id == _publisherId)
+                ? _publisherId
+                : null,
+            decoration: const InputDecoration(
+              labelText: 'Издательство',
+              border: OutlineInputBorder(),
+            ),
             items: [
               for (final publisher in publishers)
-                DropdownMenuItem(value: publisher.id, child: Text(publisher.name)),
+                DropdownMenuItem(
+                  value: publisher.id,
+                  child: Text(publisher.name),
+                ),
             ],
             onChanged: (value) => setState(() {
               _publisherId = value;
-              final allowedAuthors = cache.authorsForPublisher(value).map((a) => a.id).toSet();
-              final allowedGenres = cache.genresForPublisher(value).map((g) => g.id).toSet();
+              final allowedAuthors = cache
+                  .authorsForPublisher(value)
+                  .map((a) => a.id)
+                  .toSet();
+              final allowedGenres = cache
+                  .genresForPublisher(value)
+                  .map((g) => g.id)
+                  .toSet();
               _authorIds = _authorIds.where(allowedAuthors.contains).toList();
               _genreIds = _genreIds.where(allowedGenres.contains).toList();
               _dirty = true;
             }),
-            validator: (value) => value == null ? 'Выберите издательство' : null,
+            validator: (value) =>
+                value == null ? 'Выберите издательство' : null,
           ),
           const SizedBox(height: 8),
           Text(
@@ -222,21 +274,28 @@ class _BookFormScreenState extends State<BookFormScreen> {
           ),
           const SizedBox(height: 16),
           ChipMultiSelect(
-            key: ValueKey('authors-$_publisherId-${authors.map((a) => a.id).join(',')}'),
+            key: ValueKey(
+              'authors-$_publisherId-${authors.map((a) => a.id).join(',')}',
+            ),
             label: 'Авторы',
             options: [
-              for (final author in authors) (id: author.id, label: author.fullName),
+              for (final author in authors)
+                (id: author.id, label: author.fullName),
             ],
             value: _authorIds,
             onChanged: (value) {
               _authorIds = value;
               _markDirty();
             },
-            validator: (value) => (value == null || value.isEmpty) ? 'Выберите хотя бы одного автора' : null,
+            validator: (value) => (value == null || value.isEmpty)
+                ? 'Выберите хотя бы одного автора'
+                : null,
           ),
           const SizedBox(height: 16),
           ChipMultiSelect(
-            key: ValueKey('genres-$_publisherId-${genres.map((g) => g.id).join(',')}'),
+            key: ValueKey(
+              'genres-$_publisherId-${genres.map((g) => g.id).join(',')}',
+            ),
             label: 'Жанры',
             options: [
               for (final genre in genres) (id: genre.id, label: genre.name),
@@ -246,19 +305,27 @@ class _BookFormScreenState extends State<BookFormScreen> {
               _genreIds = value;
               _markDirty();
             },
-            validator: (value) => (value == null || value.isEmpty) ? 'Выберите хотя бы один жанр' : null,
+            validator: (value) => (value == null || value.isEmpty)
+                ? 'Выберите хотя бы один жанр'
+                : null,
           ),
           const SizedBox(height: 16),
           TextFormField(
             controller: _copiesTotal,
-            decoration: const InputDecoration(labelText: 'Всего экземпляров', border: OutlineInputBorder()),
+            decoration: const InputDecoration(
+              labelText: 'Всего экземпляров',
+              border: OutlineInputBorder(),
+            ),
             validator: V.all([V.required(), V.integer(min: 1)]),
             onChanged: (_) => _markDirty(),
           ),
           const SizedBox(height: 16),
           TextFormField(
             controller: _copiesAvailable,
-            decoration: const InputDecoration(labelText: 'Доступно экземпляров', border: OutlineInputBorder()),
+            decoration: const InputDecoration(
+              labelText: 'Доступно экземпляров',
+              border: OutlineInputBorder(),
+            ),
             validator: V.all([V.required(), V.integer(min: 0)]),
             onChanged: (_) => _markDirty(),
           ),

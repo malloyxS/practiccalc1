@@ -9,13 +9,16 @@ class InMemoryAuthorRepository implements AuthorRepository {
 
   InMemoryAuthorRepository(this.store);
 
-  Future<void> _delay() => Future<void>.delayed(const Duration(milliseconds: 250));
+  Future<void> _delay() =>
+      Future<void>.delayed(const Duration(milliseconds: 250));
 
   @override
   Future<PageResult<Author>> find(AuthorQuery q) async {
     await _delay();
     if (q.fail) throw StateError('учебная ошибка загрузки');
-    var rows = store.authors.where((a) => q.includeDeleted || !a.isDeleted).toList();
+    var rows = store.authors
+        .where((a) => q.includeDeleted || !a.isDeleted)
+        .toList();
     if (q.search.trim().isNotEmpty) {
       final needle = q.search.trim().toLowerCase();
       rows = rows

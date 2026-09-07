@@ -39,7 +39,9 @@ class _PublisherFormScreenState extends State<PublisherFormScreen> {
   }
 
   Future<void> _load() async {
-    final publisher = await context.read<PublisherRepository>().findById(widget.id!);
+    final publisher = await context.read<PublisherRepository>().findById(
+      widget.id!,
+    );
     if (!mounted || publisher == null) {
       setState(() => _loading = false);
       return;
@@ -69,7 +71,9 @@ class _PublisherFormScreenState extends State<PublisherFormScreen> {
     setState(() => _saving = true);
     try {
       final repo = context.read<PublisherRepository>();
-      widget.id == null ? await repo.create(publisher) : await repo.update(publisher);
+      widget.id == null
+          ? await repo.create(publisher)
+          : await repo.update(publisher);
       if (!mounted) return;
       await context.read<CatalogCache>().refresh();
       if (!mounted) return;
@@ -79,7 +83,9 @@ class _PublisherFormScreenState extends State<PublisherFormScreen> {
     } on ApiException catch (e) {
       setState(() => _saving = false);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message)));
     }
   }
 
@@ -97,7 +103,9 @@ class _PublisherFormScreenState extends State<PublisherFormScreen> {
       key: _formKey,
       autovalidateMode: AutovalidateMode.onUserInteraction,
       child: EntityFormScaffold(
-        title: widget.id == null ? 'Новое издательство' : 'Редактирование издательства',
+        title: widget.id == null
+            ? 'Новое издательство'
+            : 'Редактирование издательства',
         dirty: _dirty,
         loading: _loading,
         saving: _saving,
@@ -107,21 +115,36 @@ class _PublisherFormScreenState extends State<PublisherFormScreen> {
         children: [
           TextFormField(
             controller: _name,
-            decoration: const InputDecoration(labelText: 'Название', border: OutlineInputBorder()),
-            validator: V.all([V.required('Укажите название'), V.length(min: 2, max: 120)]),
+            decoration: const InputDecoration(
+              labelText: 'Название',
+              border: OutlineInputBorder(),
+            ),
+            validator: V.all([
+              V.required('Укажите название'),
+              V.length(min: 2, max: 120),
+            ]),
             onChanged: (_) => _markDirty(),
           ),
           const SizedBox(height: 16),
           TextFormField(
             controller: _city,
-            decoration: const InputDecoration(labelText: 'Город', border: OutlineInputBorder()),
-            validator: V.all([V.required('Укажите город'), V.length(min: 2, max: 80)]),
+            decoration: const InputDecoration(
+              labelText: 'Город',
+              border: OutlineInputBorder(),
+            ),
+            validator: V.all([
+              V.required('Укажите город'),
+              V.length(min: 2, max: 80),
+            ]),
             onChanged: (_) => _markDirty(),
           ),
           const SizedBox(height: 16),
           TextFormField(
             controller: _foundedYear,
-            decoration: const InputDecoration(labelText: 'Год основания', border: OutlineInputBorder()),
+            decoration: const InputDecoration(
+              labelText: 'Год основания',
+              border: OutlineInputBorder(),
+            ),
             validator: V.all([V.required(), V.integer(min: 1400, max: 2026)]),
             onChanged: (_) => _markDirty(),
           ),
