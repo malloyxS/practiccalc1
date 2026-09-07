@@ -21,7 +21,9 @@ jobs:
       - run: flutter analyze
       - run: flutter test
       - run: flutter build web --release --base-href /practiccalc1/ --dart-define=API_BASE_URL=https://api.example.com/api
-      - run: cp build/web/index.html build/web/404.html
+      - run: |
+          cp build/web/index.html build/web/404.html
+          touch build/web/.nojekyll
       - uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
