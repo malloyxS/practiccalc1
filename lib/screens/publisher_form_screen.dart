@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../core/api_exceptions.dart';
 import '../core/validators.dart';
+import '../data/catalog_cache.dart';
 import '../models/author.dart';
 import '../repositories/catalog_repositories.dart';
 import '../state/catalog_notifiers.dart';
@@ -23,6 +25,7 @@ class _PublisherFormScreenState extends State<PublisherFormScreen> {
   final _city = TextEditingController();
   final _foundedYear = TextEditingController();
   bool _loading = false;
+  bool _saving = false;
   bool _dirty = false;
   DateTime? _deletedAt;
 
@@ -55,7 +58,7 @@ class _PublisherFormScreenState extends State<PublisherFormScreen> {
   }
 
   Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (_saving || !_formKey.currentState!.validate()) return;
     final publisher = Publisher(
       id: widget.id ?? 0,
       name: _name.text.trim(),
@@ -63,12 +66,21 @@ class _PublisherFormScreenState extends State<PublisherFormScreen> {
       foundedYear: int.parse(_foundedYear.text.trim()),
       deletedAt: _deletedAt,
     );
-    final repo = context.read<PublisherRepository>();
-    widget.id == null ? await repo.create(publisher) : await repo.update(publisher);
-    if (!mounted) return;
-    await context.read<PublisherListNotifier>().load();
-    if (!mounted) return;
-    context.go('/publishers');
+    setState(() => _saving = true);
+    try {
+      final repo = context.read<PublisherRepository>();
+      widget.id == null ? await repo.create(publisher) : await repo.update(publisher);
+      if (!mounted) return;
+      await context.read<CatalogCache>().refresh();
+      if (!mounted) return;
+      await context.read<PublisherListNotifier>().load();
+      if (!mounted) return;
+      context.go('/publishers');
+    } on ApiException catch (e) {
+      setState(() => _saving = false);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+    }
   }
 
   @override
@@ -88,6 +100,7 @@ class _PublisherFormScreenState extends State<PublisherFormScreen> {
         title: widget.id == null ? 'Новое издательство' : 'Редактирование издательства',
         dirty: _dirty,
         loading: _loading,
+        saving: _saving,
         backPath: '/publishers',
         saveLabel: widget.id == null ? 'Создать' : 'Сохранить',
         onSave: _save,

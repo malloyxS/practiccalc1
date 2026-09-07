@@ -8,6 +8,7 @@ class EntityFormScaffold extends StatelessWidget {
   final String title;
   final bool dirty;
   final bool loading;
+  final bool saving;
   final VoidCallback onSave;
   final String saveLabel;
   final List<Widget> children;
@@ -21,6 +22,7 @@ class EntityFormScaffold extends StatelessWidget {
     required this.children,
     required this.backPath,
     this.loading = false,
+    this.saving = false,
     this.saveLabel = 'Сохранить',
   });
 
@@ -62,7 +64,16 @@ class EntityFormScaffold extends StatelessWidget {
                   children: [
                     ...children,
                     const SizedBox(height: 24),
-                    FilledButton(onPressed: onSave, child: Text(saveLabel)),
+                    FilledButton(
+                      onPressed: saving ? null : onSave,
+                      child: saving
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : Text(saveLabel),
+                    ),
                     const SizedBox(height: 12),
                     OutlinedButton(
                       onPressed: () => _leave(context),

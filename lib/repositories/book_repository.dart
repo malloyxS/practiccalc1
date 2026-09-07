@@ -18,4 +18,6 @@ abstract interface class BookRepository {
   Future<void> restore(int id);
 
   Future<int> deleteMany(List<int> ids);
+
+  Future<Book> issue(int id);
 }

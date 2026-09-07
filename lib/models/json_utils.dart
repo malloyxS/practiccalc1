@@ -2,6 +2,7 @@ int jsonInt(dynamic value, [int fallback = 0]) {
   if (value is int) return value;
   if (value is num) return value.toInt();
   if (value is String) return int.tryParse(value) ?? fallback;
+  if (value is Map) return jsonInt(value['id'], fallback);
   return fallback;
 }
 

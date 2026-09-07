@@ -10,6 +10,7 @@ class BookQuery {
   final int size;
   final bool includeDeleted;
   final bool fail;
+  final int? delayMs;
 
   const BookQuery({
     this.search = '',
@@ -23,6 +24,7 @@ class BookQuery {
     this.size = 10,
     this.includeDeleted = false,
     this.fail = false,
+    this.delayMs,
   });
 
   factory BookQuery.fromUri(Uri uri) {
@@ -40,7 +42,8 @@ class BookQuery {
       page: int.tryParse(q['page'] ?? '') ?? 1,
       size: int.tryParse(q['size'] ?? '') ?? 10,
       includeDeleted: q['includeDeleted'] == '1' || q['includeDeleted'] == 'true',
-      fail: q['fail'] == '1',
+      fail: q['fail'] == '1' || (q['__fail'] ?? '').isNotEmpty,
+      delayMs: int.tryParse(q['__delay'] ?? ''),
     );
   }
 
@@ -58,6 +61,7 @@ class BookQuery {
     if (size != 10) params['size'] = '$size';
     if (includeDeleted) params['includeDeleted'] = '1';
     if (fail) params['fail'] = '1';
+    if (delayMs != null) params['__delay'] = '$delayMs';
     return Uri(path: path, queryParameters: params.isEmpty ? null : params).toString();
   }
 
@@ -73,6 +77,7 @@ class BookQuery {
     int? size,
     bool? includeDeleted,
     bool? fail,
+    Object? delayMs = _unset,
   }) {
     return BookQuery(
       search: search ?? this.search,
@@ -86,6 +91,7 @@ class BookQuery {
       size: size ?? this.size,
       includeDeleted: includeDeleted ?? this.includeDeleted,
       fail: fail ?? this.fail,
+      delayMs: delayMs == _unset ? this.delayMs : delayMs as int?,
     );
   }
 
@@ -104,7 +110,8 @@ class BookQuery {
         other.page == page &&
         other.size == size &&
         other.includeDeleted == includeDeleted &&
-        other.fail == fail;
+        other.fail == fail &&
+        other.delayMs == delayMs;
   }
 
   @override
@@ -120,6 +127,7 @@ class BookQuery {
         size,
         includeDeleted,
         fail,
+        delayMs,
       );
 }
 

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../core/api_exceptions.dart';
 import '../core/validators.dart';
-import '../data/library_store.dart';
 import '../models/reader.dart';
 import '../repositories/catalog_repositories.dart';
 import '../state/catalog_notifiers.dart';
@@ -29,6 +29,7 @@ class _ReaderFormScreenState extends State<ReaderFormScreen> {
   final _expiresAt = TextEditingController();
   bool _cardActive = true;
   bool _loading = false;
+  bool _saving = false;
   bool _dirty = false;
   String? _emailUniqueError;
   DateTime? _deletedAt;
@@ -74,14 +75,9 @@ class _ReaderFormScreenState extends State<ReaderFormScreen> {
   }
 
   Future<void> _save() async {
+    if (_saving) return;
     setState(() => _emailUniqueError = null);
     if (!_formKey.currentState!.validate()) return;
-    final store = context.read<LibraryStore>();
-    if (store.emailTaken(_email.text, excludeId: widget.id)) {
-      setState(() => _emailUniqueError = 'Email уже используется');
-      _formKey.currentState!.validate();
-      return;
-    }
     final issued = DateTime.parse(_issuedAt.text.trim());
     final expires = DateTime.parse(_expiresAt.text.trim());
     if (!expires.isAfter(issued)) {
@@ -104,12 +100,25 @@ class _ReaderFormScreenState extends State<ReaderFormScreen> {
       ),
       deletedAt: _deletedAt,
     );
-    final repo = context.read<ReaderRepository>();
-    widget.id == null ? await repo.create(reader) : await repo.update(reader);
-    if (!mounted) return;
-    await context.read<ReaderListNotifier>().load();
-    if (!mounted) return;
-    context.go('/readers');
+    setState(() => _saving = true);
+    try {
+      final repo = context.read<ReaderRepository>();
+      widget.id == null ? await repo.create(reader) : await repo.update(reader);
+      if (!mounted) return;
+      await context.read<ReaderListNotifier>().load();
+      if (!mounted) return;
+      context.go('/readers');
+    } on ValidationException catch (e) {
+      setState(() {
+        _saving = false;
+        _emailUniqueError = e.errors['email'];
+      });
+      _formKey.currentState?.validate();
+    } on ApiException catch (e) {
+      setState(() => _saving = false);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+    }
   }
 
   @override
@@ -133,6 +142,7 @@ class _ReaderFormScreenState extends State<ReaderFormScreen> {
         title: widget.id == null ? 'Новый читатель' : 'Редактирование читателя',
         dirty: _dirty,
         loading: _loading,
+        saving: _saving,
         backPath: '/readers',
         saveLabel: widget.id == null ? 'Создать' : 'Сохранить',
         onSave: _save,

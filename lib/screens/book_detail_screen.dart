@@ -2,70 +2,144 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import '../data/library_store.dart';
+import '../core/api_exceptions.dart';
+import '../data/catalog_cache.dart';
 import '../models/author.dart';
 import '../models/book.dart';
 import '../repositories/author_repository.dart';
 import '../repositories/book_repository.dart';
 import '../widgets/app_chrome.dart';
 
-class BookDetailScreen extends StatelessWidget {
+class BookDetailScreen extends StatefulWidget {
   final int? id;
 
   const BookDetailScreen({super.key, required this.id});
 
   @override
-  Widget build(BuildContext context) {
-    if (id == null) {
-      return const _Missing(title: 'Карточка книги', message: 'Некорректный идентификатор.');
-    }
+  State<BookDetailScreen> createState() => _BookDetailScreenState();
+}
 
-    return FutureBuilder<Book?>(
-      future: context.read<BookRepository>().findById(id!),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
-          return Scaffold(
-            appBar: buildAppBar(context, 'Карточка книги'),
-            body: const Center(child: CircularProgressIndicator()),
-          );
-        }
-        final book = snapshot.data;
-        if (book == null) {
-          return const _Missing(title: 'Карточка книги', message: 'Книга не найдена.');
-        }
-        final store = context.watch<LibraryStore>();
-        return Scaffold(
-          appBar: buildAppBar(context, book.title),
-          body: ListView(
-            padding: const EdgeInsets.all(24),
+class _BookDetailScreenState extends State<BookDetailScreen> {
+  Book? _book;
+  bool _loading = true;
+  bool _issuing = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+  }
+
+  Future<void> _load() async {
+    if (widget.id == null) {
+      setState(() {
+        _loading = false;
+        _error = 'Некорректный идентификатор.';
+      });
+      return;
+    }
+    try {
+      final book = await context.read<BookRepository>().findById(widget.id!);
+      if (!mounted) return;
+      setState(() {
+        _book = book;
+        _loading = false;
+        _error = book == null ? 'Книга не найдена.' : null;
+      });
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = e.message;
+      });
+    }
+  }
+
+  Future<void> _issue() async {
+    if (_book == null || _issuing) return;
+    setState(() => _issuing = true);
+    try {
+      final updated = await context.read<BookRepository>().issue(_book!.id);
+      if (!mounted) return;
+      setState(() {
+        _book = updated;
+        _issuing = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Выдан экземпляр. Осталось: ${updated.copiesAvailable}')),
+      );
+    } on ConflictException catch (e) {
+      if (!mounted) return;
+      setState(() => _issuing = false);
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Выдача невозможна'),
+          content: Text(e.message),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Понятно'),
+            ),
+          ],
+        ),
+      );
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() => _issuing = false);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) {
+      return Scaffold(
+        appBar: buildAppBar(context, 'Карточка книги'),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+    final book = _book;
+    if (book == null) {
+      return _Missing(title: 'Карточка книги', message: _error ?? 'Книга не найдена.');
+    }
+    final cache = context.watch<CatalogCache>();
+    return Scaffold(
+      appBar: buildAppBar(context, book.title),
+      body: ListView(
+        padding: const EdgeInsets.all(24),
+        children: [
+          _InfoRow(label: 'Название', value: book.title),
+          _InfoRow(label: 'ISBN', value: book.isbn),
+          _InfoRow(label: 'Год', value: '${book.year}'),
+          _InfoRow(label: 'Страниц', value: '${book.pages}'),
+          _InfoRow(label: 'Издательство', value: cache.publisherNameOf(book.publisherId)),
+          _InfoRow(label: 'Авторы', value: cache.authorNamesOf(book.authorIds)),
+          _InfoRow(label: 'Жанры', value: cache.genreNamesOf(book.genreIds)),
+          _InfoRow(label: 'Экземпляров', value: '${book.copiesAvailable} из ${book.copiesTotal}'),
+          _InfoRow(label: 'Статус', value: book.isDeleted ? 'Логически удалена' : 'Активна'),
+          const SizedBox(height: 24),
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
             children: [
-              _InfoRow(label: 'Название', value: book.title),
-              _InfoRow(label: 'ISBN', value: book.isbn),
-              _InfoRow(label: 'Год', value: '${book.year}'),
-              _InfoRow(label: 'Страниц', value: '${book.pages}'),
-              _InfoRow(label: 'Издательство', value: store.publisherNameOf(book.publisherId)),
-              _InfoRow(label: 'Авторы', value: store.authorNamesOf(book.authorIds)),
-              _InfoRow(label: 'Жанры', value: store.genreNamesOf(book.genreIds)),
-              _InfoRow(label: 'Экземпляров', value: '${book.copiesAvailable} из ${book.copiesTotal}'),
-              _InfoRow(label: 'Статус', value: book.isDeleted ? 'Логически удалена' : 'Активна'),
-              const SizedBox(height: 24),
-              Wrap(
-                spacing: 12,
-                children: [
-                  FilledButton(
-                    onPressed: () => context.go('/books/${book.id}/edit'),
-                    child: const Text('Изменить'),
-                  ),
-                  OutlinedButton(
-                    onPressed: () => context.go('/books'),
-                    child: const Text('К каталогу'),
-                  ),
-                ],
+              FilledButton(
+                onPressed: _issuing ? null : _issue,
+                child: Text(_issuing ? 'Выдача...' : 'Выдать'),
+              ),
+              FilledButton.tonal(
+                onPressed: () => context.go('/books/${book.id}/edit'),
+                child: const Text('Изменить'),
+              ),
+              OutlinedButton(
+                onPressed: () => context.go('/books'),
+                child: const Text('К каталогу'),
               ),
             ],
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 }
@@ -94,8 +168,8 @@ class AuthorDetailScreen extends StatelessWidget {
         if (author == null) {
           return const _Missing(title: 'Карточка автора', message: 'Автор не найден.');
         }
-        final store = context.watch<LibraryStore>();
-        final books = store.books.where((b) => b.authorIds.contains(author.id)).toList();
+        final cache = context.watch<CatalogCache>();
+        final books = cache.books.where((b) => b.authorIds.contains(author.id)).toList();
         return Scaffold(
           appBar: buildAppBar(context, author.fullName),
           body: ListView(

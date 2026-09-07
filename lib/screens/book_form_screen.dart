@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../core/api_exceptions.dart';
 import '../core/validators.dart';
-import '../data/library_store.dart';
+import '../data/catalog_cache.dart';
 import '../models/book.dart';
 import '../repositories/book_repository.dart';
 import '../state/book_list_notifier.dart';
@@ -33,6 +34,7 @@ class _BookFormScreenState extends State<BookFormScreen> {
   List<int> _authorIds = [];
   List<int> _genreIds = [];
   bool _loading = false;
+  bool _saving = false;
   bool _dirty = false;
   String? _isbnUniqueError;
   DateTime? _deletedAt;
@@ -47,26 +49,32 @@ class _BookFormScreenState extends State<BookFormScreen> {
   }
 
   Future<void> _load() async {
-    final book = await context.read<BookRepository>().findById(widget.id!);
-    if (!mounted) return;
-    if (book == null) {
+    try {
+      final book = await context.read<BookRepository>().findById(widget.id!);
+      if (!mounted) return;
+      if (book == null) {
+        setState(() => _loading = false);
+        return;
+      }
+      _title.text = book.title;
+      _isbn.text = book.isbn;
+      _year.text = '${book.year}';
+      _pages.text = '${book.pages}';
+      _copiesTotal.text = '${book.copiesTotal}';
+      _copiesAvailable.text = '${book.copiesAvailable}';
+      setState(() {
+        _publisherId = book.publisherId;
+        _authorIds = [...book.authorIds];
+        _genreIds = [...book.genreIds];
+        _deletedAt = book.deletedAt;
+        _loading = false;
+        _dirty = false;
+      });
+    } on ApiException catch (e) {
+      if (!mounted) return;
       setState(() => _loading = false);
-      return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
     }
-    _title.text = book.title;
-    _isbn.text = book.isbn;
-    _year.text = '${book.year}';
-    _pages.text = '${book.pages}';
-    _copiesTotal.text = '${book.copiesTotal}';
-    _copiesAvailable.text = '${book.copiesAvailable}';
-    setState(() {
-      _publisherId = book.publisherId;
-      _authorIds = [...book.authorIds];
-      _genreIds = [...book.genreIds];
-      _deletedAt = book.deletedAt;
-      _loading = false;
-      _dirty = false;
-    });
   }
 
   void _markDirty() {
@@ -74,14 +82,9 @@ class _BookFormScreenState extends State<BookFormScreen> {
   }
 
   Future<void> _save() async {
+    if (_saving) return;
     setState(() => _isbnUniqueError = null);
     if (!_formKey.currentState!.validate()) return;
-    final store = context.read<LibraryStore>();
-    if (store.isbnTaken(_isbn.text, excludeId: widget.id)) {
-      setState(() => _isbnUniqueError = 'ISBN уже используется');
-      _formKey.currentState!.validate();
-      return;
-    }
     final copiesTotal = int.parse(_copiesTotal.text.trim());
     final copiesAvailable = int.parse(_copiesAvailable.text.trim());
     if (copiesAvailable > copiesTotal) {
@@ -103,16 +106,31 @@ class _BookFormScreenState extends State<BookFormScreen> {
       copiesAvailable: copiesAvailable,
       deletedAt: _deletedAt,
     );
-    final repo = context.read<BookRepository>();
-    if (widget.isEditing) {
-      await repo.update(book);
-    } else {
-      await repo.create(book);
+    setState(() => _saving = true);
+    try {
+      final repo = context.read<BookRepository>();
+      if (widget.isEditing) {
+        await repo.update(book);
+      } else {
+        await repo.create(book);
+      }
+      if (!mounted) return;
+      await context.read<CatalogCache>().refresh();
+      if (!mounted) return;
+      await context.read<BookListNotifier>().load();
+      if (!mounted) return;
+      context.go('/books');
+    } on ValidationException catch (e) {
+      setState(() {
+        _saving = false;
+        _isbnUniqueError = e.errors['isbn'];
+      });
+      _formKey.currentState?.validate();
+    } on ApiException catch (e) {
+      setState(() => _saving = false);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
     }
-    if (!mounted) return;
-    await context.read<BookListNotifier>().load();
-    if (!mounted) return;
-    context.go('/books');
   }
 
   @override
@@ -128,10 +146,10 @@ class _BookFormScreenState extends State<BookFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final store = context.watch<LibraryStore>();
-    final publishers = store.publishers.where((p) => !p.isDeleted).toList();
-    final authors = store.authorsForPublisher(_publisherId);
-    final genres = store.genresForPublisher(_publisherId);
+    final cache = context.watch<CatalogCache>();
+    final publishers = cache.publishers.where((p) => !p.isDeleted).toList();
+    final authors = cache.authorsForPublisher(_publisherId);
+    final genres = cache.genresForPublisher(_publisherId);
 
     return Form(
       key: _formKey,
@@ -140,6 +158,7 @@ class _BookFormScreenState extends State<BookFormScreen> {
         title: widget.isEditing ? 'Редактирование книги' : 'Новая книга',
         dirty: _dirty,
         loading: _loading,
+        saving: _saving,
         backPath: '/books',
         saveLabel: widget.isEditing ? 'Сохранить' : 'Создать',
         onSave: _save,
@@ -188,8 +207,8 @@ class _BookFormScreenState extends State<BookFormScreen> {
             ],
             onChanged: (value) => setState(() {
               _publisherId = value;
-              final allowedAuthors = store.authorsForPublisher(value).map((a) => a.id).toSet();
-              final allowedGenres = store.genresForPublisher(value).map((g) => g.id).toSet();
+              final allowedAuthors = cache.authorsForPublisher(value).map((a) => a.id).toSet();
+              final allowedGenres = cache.genresForPublisher(value).map((g) => g.id).toSet();
               _authorIds = _authorIds.where(allowedAuthors.contains).toList();
               _genreIds = _genreIds.where(allowedGenres.contains).toList();
               _dirty = true;

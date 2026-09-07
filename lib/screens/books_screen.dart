@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../core/breakpoints.dart';
-import '../data/library_store.dart';
+import '../data/catalog_cache.dart';
 import '../models/book.dart';
 import '../models/book_query.dart';
 import '../state/book_list_notifier.dart';
@@ -75,10 +75,10 @@ class _BooksScreenState extends State<BooksScreen> {
   @override
   Widget build(BuildContext context) {
     final notifier = context.watch<BookListNotifier>();
-    final store = context.watch<LibraryStore>();
+    final cache = context.watch<CatalogCache>();
     final compact = isCompact(context);
-    final genres = store.genres.where((g) => !g.isDeleted).toList();
-    final publishers = store.publishers.where((p) => !p.isDeleted).toList();
+    final genres = cache.genres.where((g) => !g.isDeleted).toList();
+    final publishers = cache.publishers.where((p) => !p.isDeleted).toList();
 
     return Scaffold(
       appBar: buildAppBar(context, 'Каталог книг'),
@@ -212,7 +212,7 @@ class _BooksScreenState extends State<BooksScreen> {
                 error: notifier.status == LoadStatus.error ? notifier.error : null,
                 onRetry: () => _go(widget.query.copyWith(fail: false)),
                 child: compact
-                    ? _BookCards(notifier: notifier, store: store)
+                    ? _BookCards(notifier: notifier, cache: cache)
                     : EntityTable<Book>(
                         items: notifier.result.items,
                         idOf: (b) => b.id,
@@ -234,8 +234,8 @@ class _BooksScreenState extends State<BooksScreen> {
                           TableColumnSpec(label: 'ISBN', build: (b) => Text(b.isbn)),
                           TableColumnSpec(label: 'Год', sortField: 'year', numeric: true, build: (b) => Text('${b.year}')),
                           TableColumnSpec(label: 'Страниц', sortField: 'pages', numeric: true, build: (b) => Text('${b.pages}')),
-                          TableColumnSpec(label: 'Издательство', build: (b) => Text(store.publisherNameOf(b.publisherId))),
-                          TableColumnSpec(label: 'Жанры', build: (b) => Text(store.genreNamesOf(b.genreIds))),
+                          TableColumnSpec(label: 'Издательство', build: (b) => Text(cache.publisherNameOf(b.publisherId))),
+                          TableColumnSpec(label: 'Жанры', build: (b) => Text(cache.genreNamesOf(b.genreIds))),
                         ],
                         actions: (b) => _bookActions(context, notifier, b),
                       ),
@@ -256,9 +256,9 @@ class _BooksScreenState extends State<BooksScreen> {
 
 class _BookCards extends StatelessWidget {
   final BookListNotifier notifier;
-  final LibraryStore store;
+  final CatalogCache cache;
 
-  const _BookCards({required this.notifier, required this.store});
+  const _BookCards({required this.notifier, required this.cache});
 
   @override
   Widget build(BuildContext context) {
@@ -282,7 +282,7 @@ class _BookCards extends StatelessWidget {
                   ? const TextStyle(decoration: TextDecoration.lineThrough)
                   : null,
             ),
-            subtitle: Text('${book.year} · ${store.publisherNameOf(book.publisherId)} · ${store.genreNamesOf(book.genreIds)}'),
+            subtitle: Text('${book.year} · ${cache.publisherNameOf(book.publisherId)} · ${cache.genreNamesOf(book.genreIds)}'),
             trailing: Wrap(children: _bookActions(context, notifier, book)),
             onTap: () => context.go('/books/${book.id}'),
           ),

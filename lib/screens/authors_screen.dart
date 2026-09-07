@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../core/breakpoints.dart';
-import '../data/library_store.dart';
+import '../data/catalog_cache.dart';
 import '../models/author.dart';
 import '../models/book_query.dart';
 import '../state/author_list_notifier.dart';
@@ -61,9 +61,9 @@ class _AuthorsScreenState extends State<AuthorsScreen> {
   @override
   Widget build(BuildContext context) {
     final notifier = context.watch<AuthorListNotifier>();
-    final store = context.watch<LibraryStore>();
+    final cache = context.watch<CatalogCache>();
     final compact = isCompact(context);
-    final countries = store.authors.map((a) => a.country).toSet().toList()..sort();
+    final countries = cache.authors.map((a) => a.country).toSet().toList()..sort();
 
     return Scaffold(
       appBar: buildAppBar(context, 'Авторы'),
@@ -206,7 +206,7 @@ class _AuthorsScreenState extends State<AuthorsScreen> {
                             label: 'Книг',
                             numeric: true,
                             build: (a) => Text(
-                              '${store.books.where((b) => b.authorIds.contains(a.id) && !b.isDeleted).length}',
+                              '${cache.books.where((b) => b.authorIds.contains(a.id) && !b.isDeleted).length}',
                             ),
                           ),
                         ],

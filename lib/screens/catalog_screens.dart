@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../core/api_exceptions.dart';
 import '../core/breakpoints.dart';
+import '../data/catalog_cache.dart';
 import '../data/library_store.dart';
 import '../models/author.dart';
 import '../models/book_query.dart';
@@ -206,6 +208,21 @@ class _PublishersScreenState extends State<PublishersScreen> {
   Future<void> _guarded(Future<void> Function() action) async {
     try {
       await action();
+    } on ConflictException catch (e) {
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Удаление запрещено'),
+          content: Text(e.message),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Понятно'),
+            ),
+          ],
+        ),
+      );
     } on RelationException catch (e) {
       if (!mounted) return;
       await showDialog<void>(
@@ -227,7 +244,7 @@ class _PublishersScreenState extends State<PublishersScreen> {
   @override
   Widget build(BuildContext context) {
     final notifier = context.watch<PublisherListNotifier>();
-    final store = context.watch<LibraryStore>();
+    final cache = context.watch<CatalogCache>();
     final compact = isCompact(context);
     return Scaffold(
       appBar: buildAppBar(context, 'Издательства'),
@@ -286,7 +303,7 @@ class _PublishersScreenState extends State<PublishersScreen> {
                               ),
                               title: Text(publisher.name),
                               subtitle: Text(
-                                '${publisher.city}, ${publisher.foundedYear} · книг: ${store.booksCountForPublisher(publisher.id)}',
+                                '${publisher.city}, ${publisher.foundedYear} · книг: ${cache.booksCountForPublisher(publisher.id)}',
                               ),
                               trailing: Wrap(children: _publisherActions(context, notifier, publisher, _guarded)),
                             ),
@@ -319,7 +336,7 @@ class _PublishersScreenState extends State<PublishersScreen> {
                           TableColumnSpec(
                             label: 'Книг',
                             numeric: true,
-                            build: (p) => Text('${store.booksCountForPublisher(p.id)}'),
+                            build: (p) => Text('${cache.booksCountForPublisher(p.id)}'),
                           ),
                         ],
                         actions: (p) => _publisherActions(context, notifier, p, _guarded),

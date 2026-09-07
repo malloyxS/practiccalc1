@@ -1,0 +1,357 @@
+Практическая работа 4. Подключение REST API
+Цель работы
+Заменить хранилище в памяти на настоящий сервер, освоить работу с Dio в условиях web-платформы, научиться диагностировать CORS и корректно обрабатывать все состояния сетевого слоя.
+Что потребуется
+Приложение А, раздел 3 «CORS» — обязательно до начала работы;
+Контракт учебного API: api/КОНТРАКТ-API.md;
+Результат ПР3.
+Показательный проект
+К этой работе относятся шаги step-07 и step-08 показательного проекта «Киберлига» (ссылка — в программе практики, раздел 1.2): замена хранилища в памяти на настоящий сервер (там — PocketBase, у вас — учебное API, но приём тот же: меняется только реализация репозитория) и обработка состояний загрузки, пустого результата и ошибки.
+git diff step-07 step-08
+Подготовка рабочего места
+Запустите учебный сервер:
+node mock-server.js --port 8080 --origin http://localhost:5555
+Клиент запускайте только с фиксированным портом, иначе источник будет меняться и сервер начнёт отклонять запросы:
+flutter run -d chrome --web-port=5555
+Проверьте, что сервер отвечает, до того как писать код: откройте в браузере http://localhost:8080/api/__health.
+
+1. Постановка задачи
+Приложение из ПР3 переводится на работу с сервером. Ключевая проверка качества архитектуры: экраны и формы не должны измениться. Если для подключения API пришлось переписывать виджеты, слои в ПР2 были разделены неправильно.
+1.1. Соответствие конструкций
+
+2. Ход выполнения
+2.1. Адрес сервера как параметр сборки
+Зашивать адрес константой нельзя: на занятии он один, дома другой, при публикации третий.
+// lib/core/config.dart
+
+const apiBaseUrl = String.fromEnvironment(
+  'API_BASE_URL',
+  defaultValue: 'http://localhost:8080/api',
+);
+flutter run -d chrome --web-port=5555 --dart-define=API_BASE_URL=http://192.168.1.10:8080/api
+2.2. Настройка Dio
+// lib/core/api_client.dart
+import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart'; // kDebugMode, debugPrint
+
+Dio buildDio({String? Function()? tokenProvider}) {
+  final dio = Dio(
+    BaseOptions(
+      baseUrl: apiBaseUrl,
+      connectTimeout: const Duration(seconds: 10),
+      receiveTimeout: const Duration(seconds: 15),
+      headers: {'Content-Type': 'application/json'},
+      // Не бросать исключение на кодах 4xx — разберём их сами
+      validateStatus: (status) => status != null && status < 500,
+    ),
+  );
+
+  dio.interceptors.add(
+    InterceptorsWrapper(
+      onRequest: (options, handler) {
+        final token = tokenProvider?.call();
+        if (token != null) {
+          options.headers['Authorization'] = 'Bearer $token';
+        }
+        return handler.next(options);
+      },
+      onResponse: (response, handler) {
+        // Коды 4xx попадают сюда, а не в onError, из-за validateStatus.
+        final status = response.statusCode ?? 0;
+        if (status >= 400) {
+          // Просто написать `throw mapHttpError(...)` нельзя: dio перехватит
+          // любое исключение из интерсептора и завернёт его в DioException
+          // с типом unknown, а наш ValidationException окажется спрятан
+          // внутри поля error. Поэтому отправляем ответ по ветке ошибок сами,
+          // приложив уже разобранное исключение.
+          return handler.reject(
+            DioException(
+              requestOptions: response.requestOptions,
+              response: response,
+              type: DioExceptionType.badResponse,
+              error: mapHttpError(status, response.data),
+            ),
+            true,
+          );
+        }
+        return handler.next(response);
+      },
+      onError: (error, handler) {
+        // Сюда приходят сетевые сбои, таймауты, коды 5xx
+        // и всё, что отклонил обработчик выше.
+        if (kDebugMode) {
+          debugPrint('[API] сбой ${error.requestOptions.uri}: ${error.type}');
+        }
+        return handler.next(error);
+      },
+    ),
+  );
+
+  return dio;
+}
+2.3. Исключения предметной области
+Виджеты не должны знать о существовании Dio. Между сетевым слоем и остальным приложением ставится набор собственных исключений.
+// lib/core/api_exceptions.dart
+
+sealed class ApiException implements Exception {
+  final String message;
+  const ApiException(this.message);
+
+  @override
+  String toString() => message;
+}
+
+/// Нет соединения, таймаут, сервер недоступен, заблокировано CORS
+class NetworkException extends ApiException {
+  const NetworkException([super.message = 'Сервер недоступен. Проверьте соединение.']);
+}
+
+/// 401 — не аутентифицирован либо срок действия токена истёк
+class UnauthorizedException extends ApiException {
+  const UnauthorizedException([super.message = 'Требуется вход в систему.']);
+}
+
+/// 403 — роль не позволяет выполнить операцию
+class ForbiddenException extends ApiException {
+  const ForbiddenException([super.message = 'Недостаточно прав для этого действия.']);
+}
+
+/// 404
+class NotFoundException extends ApiException {
+  const NotFoundException([super.message = 'Запись не найдена.']);
+}
+
+/// 409 — нарушено ограничение целостности
+class ConflictException extends ApiException {
+  const ConflictException(super.message);
+}
+
+/// 422 — ошибки валидации по полям
+class ValidationException extends ApiException {
+  final Map<String, String> errors;
+  const ValidationException(super.message, this.errors);
+}
+
+/// 5xx
+class ServerException extends ApiException {
+  const ServerException([super.message = 'Ошибка на сервере. Попробуйте позже.']);
+}
+
+ApiException mapHttpError(int status, dynamic body) {
+  final message = (body is Map && body['message'] is String)
+      ? body['message'] as String
+      : null;
+
+  return switch (status) {
+    401 => UnauthorizedException(message ?? 'Требуется вход в систему.'),
+    403 => ForbiddenException(message ?? 'Недостаточно прав для этого действия.'),
+    404 => NotFoundException(message ?? 'Запись не найдена.'),
+    409 => ConflictException(message ?? 'Операция невозможна.'),
+    422 => ValidationException(
+        message ?? 'Ошибка валидации',
+        (body is Map && body['errors'] is Map)
+            ? (body['errors'] as Map).map((k, v) => MapEntry('$k', '$v'))
+            : const {},
+      ),
+    _ => ServerException(message ?? 'Неизвестная ошибка (код $status).'),
+  };
+}
+
+ApiException mapDioError(DioException e) {
+  // Если исключение уже разобрал интерсептор, повторно его не разбираем.
+  // Без этой проверки ошибка 422 придёт в приложение как ServerException,
+  // и обработчик `on ValidationException` никогда не сработает.
+  final existing = e.error;
+  if (existing is ApiException) return existing;
+
+  return switch (e.type) {
+    DioExceptionType.connectionTimeout ||
+    DioExceptionType.sendTimeout ||
+    DioExceptionType.receiveTimeout =>
+      const NetworkException('Сервер не ответил вовремя.'),
+    DioExceptionType.connectionError =>
+      const NetworkException(
+        'Не удалось соединиться с сервером. '
+        'Если сервер запущен, откройте консоль браузера и проверьте наличие ошибки CORS.',
+      ),
+    DioExceptionType.cancel => const NetworkException('Запрос отменён.'),
+    _ => const ServerException(),
+  };
+}
+Подсказка про CORS в тексте ошибки добавлена намеренно: со стороны Dart ошибка CORS неотличима от «сервер выключен», и без такой подсказки студенты тратят на её поиск целые пары.
+2.4. Репозиторий поверх API
+Интерфейс BookRepository из ПР2 остаётся без единого изменения — меняется только реализация.
+Каждое обращение к сети оборачивается вспомогательной функцией guard. Её единственная задача — не выпустить наружу DioException: в приложение должны попадать только исключения предметной области.
+// lib/core/api_exceptions.dart
+
+Future<T> guard<T>(Future<T> Function() action) async {
+  try {
+    return await action();
+  } on DioException catch (e) {
+    throw mapDioError(e);
+  }
+}
+// lib/repositories/api_book_repository.dart
+
+class ApiBookRepository implements BookRepository {
+  final Dio _dio;
+  ApiBookRepository(this._dio);
+
+  @override
+  Future<PageResult<Book>> find(BookQuery q) => guard(() async {
+        final response = await _dio.get('/books', queryParameters: {
+          if (q.search.trim().isNotEmpty) 'search': q.search.trim(),
+          if (q.genreId != null) 'genreId': q.genreId,
+          if (q.publisherId != null) 'publisherId': q.publisherId,
+          if (q.yearFrom != null) 'yearFrom': q.yearFrom,
+          if (q.yearTo != null) 'yearTo': q.yearTo,
+          'sort': '${q.sortField},${q.sortAscending ? 'asc' : 'desc'}',
+          'page': q.page,
+          'size': q.size,
+          if (q.includeDeleted) 'includeDeleted': true,
+        });
+
+        final data = response.data as Map<String, dynamic>;
+        return PageResult(
+          items: (data['items'] as List)
+              .whereType<Map<String, dynamic>>()
+              .map(Book.fromJson)
+              .toList(),
+          page: data['page'] as int? ?? 1,
+          size: data['size'] as int? ?? q.size,
+          total: data['total'] as int? ?? 0,
+        );
+      });
+
+  @override
+  Future<Book> create(Book book) => guard(() async {
+        final response = await _dio.post('/books', data: {
+          'title': book.title,
+          'isbn': book.isbn,
+          'year': book.year,
+          'pages': book.pages,
+          'publisherId': book.publisherId,
+          'authorIds': book.authorIds,
+          'genreIds': book.genreIds,
+          'copiesTotal': book.copiesTotal,
+        });
+        return Book.fromJson(response.data as Map<String, dynamic>);
+      });
+
+  @override
+  Future<void> softDelete(int id) =>
+      guard(() => _dio.delete('/books/$id'));
+
+  @override
+  Future<void> hardDelete(int id) =>
+      guard(() => _dio.delete('/books/$id', queryParameters: {'hard': true}));
+
+  @override
+  Future<int> deleteMany(List<int> ids) => guard(() async {
+        final response =
+            await _dio.post('/books/bulk-delete', data: {'ids': ids});
+        return (response.data as Map<String, dynamic>)['deleted'] as int? ?? 0;
+      });
+
+  // findById, update и restore реализуются самостоятельно по тому же образцу
+}
+Обратите внимание на несовпадение представлений: на запись уходят publisherId, authorIds, genreIds, а приходят развёрнутые объекты publisher, authors, genres. Это стандартная для REST ситуация, и модель должна разбирать обе формы. Проще всего завести две модели — Book для чтения и BookInput для записи, — либо предусмотреть в fromJson оба варианта.
+2.5. Замена реализации
+Единственное место, где меняется приложение целиком:
+MultiProvider(
+  providers: [
+    Provider<Dio>(create: (_) => buildDio()),
+    ProxyProvider<Dio, BookRepository>(
+      // было: InMemoryBookRepository()
+      update: (_, dio, __) => ApiBookRepository(dio),
+    ),
+    // ... остальные провайдеры без изменений
+  ],
+  child: const LibraryApp(),
+)
+Если после этой правки приложение работает и ни один экран не потребовалось трогать — архитектура ПР2 выстроена верно. Если пришлось править виджеты, зафиксируйте в отчёте, что именно и почему.
+2.6. Серверные ошибки валидации в форме
+Сервер проверяет то, что клиент проверить не может: уникальность ISBN, существование связанных записей, конфликты.
+Future<void> _submit() async {
+  setState(() => _serverErrors = {});
+  if (!_formKey.currentState!.validate()) return;
+
+  setState(() => _saving = true);
+  try {
+    await context.read<BookRepository>().create(_buildBook());
+    if (!mounted) return;
+    context.go('/books');
+  } on ValidationException catch (e) {
+    setState(() => _serverErrors = e.errors);
+    _formKey.currentState!.validate(); // перерисовать поля с новыми ошибками
+  } on ConflictException catch (e) {
+    _showSnackBar(e.message);
+  } on ApiException catch (e) {
+    _showSnackBar(e.message);
+  } finally {
+    if (mounted) setState(() => _saving = false);
+  }
+}
+Ключи в errors, приходящие с сервера, совпадают с именами полей модели — это оговорено в контракте и позволяет разложить ошибки по полям без сопоставления вручную.
+2.7. Диагностика
+Порядок действий, когда «ничего не работает»:
+Открыт ли сервер? Проверьте http://localhost:8080/api/__health прямо в браузере.
+Откройте консоль браузера (F12 → Console). Есть сообщение со словом CORS? Причина найдена, читайте приложение А, раздел 3.
+Откройте вкладку Network. Виден ли запрос вообще? Если запроса нет — ошибка до отправки, в коде. Если есть запрос OPTIONS со статусом ошибки — сервер не обрабатывает предварительные запросы.
+Совпадает ли адрес запроса с ожидаемым? Опечатка в baseUrl даёт 404, который легко принять за отсутствие данных.
+Какой код ответа? 401 — нет или истёк токен, 403 — не та роль, 422 — данные не прошли проверку сервера.
+3. Задание
+На оценку «3»
+Список книг загружается с сервера через Dio. Данные в памяти больше не используются.
+Настроены базовый адрес, таймауты соединения и ответа; адрес задаётся параметром --dart-define, а не константой.
+Экран обрабатывает все четыре состояния: загрузка, данные получены, пустой результат, ошибка. Состояние ошибки содержит понятный текст и кнопку повтора.
+Работоспособность обработки проверена принудительно: покажите работу приложения при остановленном сервере и при запросе с параметром ?__fail=500.
+Индикатор загрузки виден: проверьте при помощи параметра ?__delay=1500.
+На оценку «4»
+Дополнительно:
+Реализован полный CRUD через API для всех сущностей: создание, чтение, изменение, оба вида удаления, восстановление, множественное удаление.
+Сетевые ошибки преобразуются в собственные исключения предметной области. В виджетах нет ни одного упоминания Dio и DioException.
+Настроен интерсептор, выполняющий общую обработку ошибок и журналирование запросов. В режиме отладки в консоль выводятся метод, адрес и код ответа каждого запроса.
+Ошибки валидации с кодом 422 отображаются в соответствующих полях формы. Продемонстрируйте на попытке сохранить книгу с уже существующим ISBN.
+Конфликты с кодом 409 показываются пользователю понятным сообщением. Продемонстрируйте на попытке выдать книгу, у которой нет свободных экземпляров.
+В отчёте описан случай ошибки CORS: как она проявилась, как была обнаружена и что именно её устранило.
+На оценку «5»
+Дополнительно:
+Поиск, фильтрация, сортировка и постраничный вывод выполняются на сервере, а не на клиенте. Клиент хранит только текущую страницу. Проверяется по вкладке Network: при переходе на следующую страницу должен уходить новый запрос.
+Реализована отмена устаревших запросов через CancelToken: при быстром вводе в поле поиска предыдущий запрос отменяется. Без этого ответы могут прийти не в том порядке, и на экране окажется результат по устаревшему запросу.
+Реализован автоматический повтор при сетевом сбое: не более трёх попыток с нарастающей паузой. Повтор выполняется только для операций чтения — повторять создание записи нельзя.
+Реализовано кэширование справочников (жанры, издательства, авторы): они запрашиваются один раз и не перезагружаются при каждом открытии формы.
+Реализовано разделение действий, изменяющих данные: во время сохранения кнопка заблокирована, повторное нажатие не создаёт вторую запись.
+Написаны модульные тесты репозитория с подменённым Dio: не менее пяти проверок, включая разбор ответа 422 и обработку недоступности сервера.
+Пункт 13 стоит объяснить отдельно. Пользователь набирает «война» по букве. Уходит пять запросов. Ответ на «во» может прийти после ответа на «война» — и на экране окажется результат по «во». Такая ошибка воспроизводится редко и ищется тяжело, поэтому отмену устаревших запросов делают сразу.
+4. Что сдать
+Ссылка на репозиторий.
+Снимки экранов: список с сервера, состояние загрузки, состояние ошибки при остановленном сервере, пустой результат, ошибка 422 в поле формы, сообщение о конфликте 409.
+Снимок вкладки Network с запросом и его параметрами; для оценки «5» — снимок, подтверждающий, что при переходе по страницам уходит новый запрос.
+Раздел отчёта: описание используемых эндпоинтов, схема преобразования сетевых ошибок в исключения предметной области, описание встреченной ошибки CORS и её устранения.
+
+5. Типичные ошибки
+
+
+===== TABLES =====
+
+===TABLE 0===
+Java Spring (серверная сторона) || Flutter Web (клиентская сторона)
+@RestController || ApiBookRepository
+@GetMapping возвращает объект || dio.get(...) разбирает объект
+@RequestBody || dio.post(path, data: book.toJson())
+@ControllerAdvice с общей обработкой ошибок || интерсептор Dio
+ResponseEntity.status(422).body(errors) || DioException с response.statusCode == 422
+Проверка через Postman || вкладка Network в DevTools браузера
+
+===TABLE 1===
+Симптом || Причина
+DioException [connectionError], сервер при этом запущен || ошибка CORS; смотреть в консоль браузера, чинить на сервере
+GET работает, POST не работает || сервер не обрабатывает предварительный запрос OPTIONS
+Запрос не появляется во вкладке Network || исключение возникло до отправки, в коде сборки запроса
+404 на всех адресах || лишний или недостающий слэш в baseUrl
+Приложение падает при разборе ответа || fromJson без значений по умолчанию; поле пришло null
+Ошибки 4xx не перехватываются || validateStatus пропускает их в onResponse, а обработчика там нет
+Результат поиска не соответствует введённому тексту || не отменяются устаревшие запросы
+Двойное создание записи || кнопка не блокируется на время отправки
+setState() called after dispose() || ответ пришёл после закрытия экрана; проверяйте mounted

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../core/api_exceptions.dart';
 import '../models/book.dart';
 import '../models/book_query.dart';
 import '../models/page_result.dart';
@@ -32,6 +33,11 @@ class BookListNotifier extends ChangeNotifier {
     try {
       _result = await _repository.find(_query);
       _status = LoadStatus.success;
+    } on RequestCancelledException {
+      return;
+    } on ApiException catch (e) {
+      _error = e.message;
+      _status = LoadStatus.error;
     } catch (e) {
       _error = 'Не удалось загрузить список: $e';
       _status = LoadStatus.error;

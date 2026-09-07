@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../core/api_exceptions.dart';
 import '../core/validators.dart';
+import '../data/catalog_cache.dart';
 import '../models/author.dart';
 import '../repositories/author_repository.dart';
 import '../state/author_list_notifier.dart';
@@ -24,6 +26,7 @@ class _AuthorFormScreenState extends State<AuthorFormScreen> {
   final _country = TextEditingController();
   final _birthYear = TextEditingController();
   bool _loading = false;
+  bool _saving = false;
   bool _dirty = false;
   DateTime? _deletedAt;
 
@@ -57,7 +60,7 @@ class _AuthorFormScreenState extends State<AuthorFormScreen> {
   }
 
   Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (_saving || !_formKey.currentState!.validate()) return;
     final author = Author(
       id: widget.id ?? 0,
       lastName: _lastName.text.trim(),
@@ -66,12 +69,21 @@ class _AuthorFormScreenState extends State<AuthorFormScreen> {
       birthYear: int.parse(_birthYear.text.trim()),
       deletedAt: _deletedAt,
     );
-    final repo = context.read<AuthorRepository>();
-    widget.id == null ? await repo.create(author) : await repo.update(author);
-    if (!mounted) return;
-    await context.read<AuthorListNotifier>().load();
-    if (!mounted) return;
-    context.go('/authors');
+    setState(() => _saving = true);
+    try {
+      final repo = context.read<AuthorRepository>();
+      widget.id == null ? await repo.create(author) : await repo.update(author);
+      if (!mounted) return;
+      await context.read<CatalogCache>().refresh();
+      if (!mounted) return;
+      await context.read<AuthorListNotifier>().load();
+      if (!mounted) return;
+      context.go('/authors');
+    } on ApiException catch (e) {
+      setState(() => _saving = false);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+    }
   }
 
   @override
@@ -92,6 +104,7 @@ class _AuthorFormScreenState extends State<AuthorFormScreen> {
         title: widget.id == null ? 'Новый автор' : 'Редактирование автора',
         dirty: _dirty,
         loading: _loading,
+        saving: _saving,
         backPath: '/authors',
         saveLabel: widget.id == null ? 'Создать' : 'Сохранить',
         onSave: _save,

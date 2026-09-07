@@ -122,4 +122,17 @@ class InMemoryBookRepository implements BookRepository {
     await store.persist();
     return count;
   }
+
+  @override
+  Future<Book> issue(int id) async {
+    final i = store.books.indexWhere((b) => b.id == id);
+    if (i == -1) throw StateError('Книга $id не найдена');
+    final book = store.books[i];
+    if (book.copiesAvailable <= 0) {
+      throw StateError('Нет свободных экземпляров');
+    }
+    store.books[i] = book.copyWith(copiesAvailable: book.copiesAvailable - 1);
+    await store.persist();
+    return store.books[i];
+  }
 }

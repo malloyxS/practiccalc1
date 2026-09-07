@@ -22,7 +22,7 @@ class HomeScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Формы, валидация, связи сущностей и сохранение в браузере.',
+              'Каталог читается с учебного REST API. Адрес сервера задаётся через --dart-define=API_BASE_URL.',
               style: Theme.of(context).textTheme.bodyMedium,
               textAlign: TextAlign.center,
             ),
