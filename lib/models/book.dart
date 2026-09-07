@@ -1,3 +1,5 @@
+import 'json_utils.dart';
+
 class Book {
   final int id;
   final String title;
@@ -54,4 +56,32 @@ class Book {
       deletedAt: clearDeletedAt ? null : (deletedAt ?? this.deletedAt),
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'title': title,
+        'isbn': isbn,
+        'year': year,
+        'pages': pages,
+        'publisherId': publisherId,
+        'authorIds': authorIds,
+        'genreIds': genreIds,
+        'copiesTotal': copiesTotal,
+        'copiesAvailable': copiesAvailable,
+        'deletedAt': deletedAt?.toIso8601String(),
+      };
+
+  factory Book.fromJson(Map<String, dynamic> json) => Book(
+        id: jsonInt(json['id']),
+        title: jsonString(json['title']),
+        isbn: jsonString(json['isbn']),
+        year: jsonInt(json['year']),
+        pages: jsonInt(json['pages']),
+        publisherId: jsonInt(json['publisherId']),
+        authorIds: jsonIntList(json['authorIds']),
+        genreIds: jsonIntList(json['genreIds']),
+        copiesTotal: jsonInt(json['copiesTotal']),
+        copiesAvailable: jsonInt(json['copiesAvailable']),
+        deletedAt: jsonDate(json['deletedAt']),
+      );
 }

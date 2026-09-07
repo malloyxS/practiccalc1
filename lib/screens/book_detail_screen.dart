@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import '../data/seed_data.dart';
+import '../data/library_store.dart';
 import '../models/author.dart';
 import '../models/book.dart';
 import '../repositories/author_repository.dart';
@@ -33,6 +33,7 @@ class BookDetailScreen extends StatelessWidget {
         if (book == null) {
           return const _Missing(title: 'Карточка книги', message: 'Книга не найдена.');
         }
+        final store = context.watch<LibraryStore>();
         return Scaffold(
           appBar: buildAppBar(context, book.title),
           body: ListView(
@@ -42,18 +43,24 @@ class BookDetailScreen extends StatelessWidget {
               _InfoRow(label: 'ISBN', value: book.isbn),
               _InfoRow(label: 'Год', value: '${book.year}'),
               _InfoRow(label: 'Страниц', value: '${book.pages}'),
-              _InfoRow(label: 'Издательство', value: publisherName(book.publisherId)),
-              _InfoRow(label: 'Авторы', value: authorNames(book.authorIds)),
-              _InfoRow(label: 'Жанры', value: genreNames(book.genreIds)),
+              _InfoRow(label: 'Издательство', value: store.publisherNameOf(book.publisherId)),
+              _InfoRow(label: 'Авторы', value: store.authorNamesOf(book.authorIds)),
+              _InfoRow(label: 'Жанры', value: store.genreNamesOf(book.genreIds)),
               _InfoRow(label: 'Экземпляров', value: '${book.copiesAvailable} из ${book.copiesTotal}'),
               _InfoRow(label: 'Статус', value: book.isDeleted ? 'Логически удалена' : 'Активна'),
               const SizedBox(height: 24),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: OutlinedButton(
-                  onPressed: () => context.go('/books'),
-                  child: const Text('К каталогу'),
-                ),
+              Wrap(
+                spacing: 12,
+                children: [
+                  FilledButton(
+                    onPressed: () => context.go('/books/${book.id}/edit'),
+                    child: const Text('Изменить'),
+                  ),
+                  OutlinedButton(
+                    onPressed: () => context.go('/books'),
+                    child: const Text('К каталогу'),
+                  ),
+                ],
               ),
             ],
           ),
@@ -87,7 +94,8 @@ class AuthorDetailScreen extends StatelessWidget {
         if (author == null) {
           return const _Missing(title: 'Карточка автора', message: 'Автор не найден.');
         }
-        final books = seedBooks.where((b) => b.authorIds.contains(author.id)).toList();
+        final store = context.watch<LibraryStore>();
+        final books = store.books.where((b) => b.authorIds.contains(author.id)).toList();
         return Scaffold(
           appBar: buildAppBar(context, author.fullName),
           body: ListView(
@@ -108,12 +116,18 @@ class AuthorDetailScreen extends StatelessWidget {
                   onTap: () => context.go('/books/${book.id}'),
                 ),
               const SizedBox(height: 24),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: OutlinedButton(
-                  onPressed: () => context.go('/authors'),
-                  child: const Text('К списку авторов'),
-                ),
+              Wrap(
+                spacing: 12,
+                children: [
+                  FilledButton(
+                    onPressed: () => context.go('/authors/${author.id}/edit'),
+                    child: const Text('Изменить'),
+                  ),
+                  OutlinedButton(
+                    onPressed: () => context.go('/authors'),
+                    child: const Text('К списку авторов'),
+                  ),
+                ],
               ),
             ],
           ),

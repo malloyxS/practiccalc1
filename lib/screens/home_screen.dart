@@ -22,7 +22,7 @@ class HomeScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Списки, фильтры и пагинация синхронизируются с адресной строкой.',
+              'Формы, валидация, связи сущностей и сохранение в браузере.',
               style: Theme.of(context).textTheme.bodyMedium,
               textAlign: TextAlign.center,
             ),
@@ -32,11 +32,29 @@ class HomeScreen extends StatelessWidget {
               icon: const Icon(Icons.menu_book),
               label: const Text('Каталог книг'),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             FilledButton.icon(
               onPressed: () => context.go('/authors'),
               icon: const Icon(Icons.people_alt_outlined),
               label: const Text('Авторы'),
+            ),
+            const SizedBox(height: 12),
+            FilledButton.icon(
+              onPressed: () => context.go('/genres'),
+              icon: const Icon(Icons.category_outlined),
+              label: const Text('Жанры'),
+            ),
+            const SizedBox(height: 12),
+            FilledButton.icon(
+              onPressed: () => context.go('/publishers'),
+              icon: const Icon(Icons.business_outlined),
+              label: const Text('Издательства'),
+            ),
+            const SizedBox(height: 12),
+            FilledButton.icon(
+              onPressed: () => context.go('/readers'),
+              icon: const Icon(Icons.badge_outlined),
+              label: const Text('Читатели'),
             ),
             const SizedBox(height: 32),
             Text(

@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../core/breakpoints.dart';
-import '../data/seed_data.dart';
+import '../data/library_store.dart';
 import '../models/author.dart';
 import '../models/book_query.dart';
 import '../state/author_list_notifier.dart';
@@ -26,8 +26,6 @@ class AuthorsScreen extends StatefulWidget {
 class _AuthorsScreenState extends State<AuthorsScreen> {
   late final TextEditingController _search;
   Timer? _debounce;
-
-  static const _countries = ['Россия', 'США', 'Великобритания'];
 
   @override
   void initState() {
@@ -63,10 +61,17 @@ class _AuthorsScreenState extends State<AuthorsScreen> {
   @override
   Widget build(BuildContext context) {
     final notifier = context.watch<AuthorListNotifier>();
+    final store = context.watch<LibraryStore>();
     final compact = isCompact(context);
+    final countries = store.authors.map((a) => a.country).toSet().toList()..sort();
 
     return Scaffold(
       appBar: buildAppBar(context, 'Авторы'),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => context.go('/authors/new'),
+        tooltip: 'Новый автор',
+        child: const Icon(Icons.add),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -99,7 +104,9 @@ class _AuthorsScreenState extends State<AuthorsScreen> {
                   child: DropdownButtonFormField<String?>(
                     key: ValueKey('country-${widget.query.country}'),
                     isExpanded: true,
-                    initialValue: widget.query.country,
+                    initialValue: widget.query.country != null && countries.contains(widget.query.country)
+                        ? widget.query.country
+                        : null,
                     decoration: const InputDecoration(
                       labelText: 'Страна',
                       border: OutlineInputBorder(),
@@ -107,7 +114,7 @@ class _AuthorsScreenState extends State<AuthorsScreen> {
                     ),
                     items: [
                       const DropdownMenuItem(value: null, child: Text('Все страны')),
-                      for (final country in _countries)
+                      for (final country in countries)
                         DropdownMenuItem(value: country, child: Text(country)),
                     ],
                     onChanged: (value) => _go(widget.query.copyWith(country: value)),
@@ -199,7 +206,7 @@ class _AuthorsScreenState extends State<AuthorsScreen> {
                             label: 'Книг',
                             numeric: true,
                             build: (a) => Text(
-                              '${seedBooks.where((b) => b.authorIds.contains(a.id)).length}',
+                              '${store.books.where((b) => b.authorIds.contains(a.id) && !b.isDeleted).length}',
                             ),
                           ),
                         ],
@@ -230,6 +237,11 @@ List<Widget> _authorActions(
       tooltip: 'Карточка',
       icon: const Icon(Icons.visibility_outlined),
       onPressed: () => context.go('/authors/${author.id}'),
+    ),
+    IconButton(
+      tooltip: 'Изменить',
+      icon: const Icon(Icons.edit_outlined),
+      onPressed: () => context.go('/authors/${author.id}/edit'),
     ),
     if (author.isDeleted)
       IconButton(

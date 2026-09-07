@@ -1,5 +1,6 @@
 import '../models/author.dart';
 import '../models/book.dart';
+import '../models/reader.dart';
 
 const genres = [
   Genre(id: 1, name: 'Художественная'),
@@ -10,11 +11,11 @@ const genres = [
 ];
 
 const publishers = [
-  Publisher(id: 1, name: 'АСТ'),
-  Publisher(id: 2, name: 'Эксмо'),
-  Publisher(id: 3, name: 'Питер'),
-  Publisher(id: 4, name: 'Капитал Пресс'),
-  Publisher(id: 5, name: 'МИФ'),
+  Publisher(id: 1, name: 'АСТ', city: 'Москва', foundedYear: 1990),
+  Publisher(id: 2, name: 'Эксмо', city: 'Москва', foundedYear: 1991),
+  Publisher(id: 3, name: 'Питер', city: 'Санкт-Петербург', foundedYear: 1991),
+  Publisher(id: 4, name: 'Капитал Пресс', city: 'Москва', foundedYear: 2005),
+  Publisher(id: 5, name: 'МИФ', city: 'Москва', foundedYear: 2005),
 ];
 
 const seedAuthors = [
@@ -55,6 +56,17 @@ const seedBooks = [
   Book(id: 22, title: 'Личные финансы', isbn: '978-5-9614-2222-1', year: 2021, pages: 256, publisherId: 4, authorIds: [7], genreIds: [4], copiesTotal: 6, copiesAvailable: 6),
   Book(id: 23, title: 'Капитал для начинающих', isbn: '978-5-00146-333-0', year: 2020, pages: 312, publisherId: 5, authorIds: [8], genreIds: [4], copiesTotal: 4, copiesAvailable: 2),
   Book(id: 24, title: 'История денег', isbn: '978-5-17-134001-2', year: 2014, pages: 400, publisherId: 5, authorIds: [1], genreIds: [3, 4], copiesTotal: 3, copiesAvailable: 3),
+];
+
+final seedReaders = [
+  Reader(id: 1, lastName: 'Иванов', firstName: 'Пётр', email: 'ivanov@mail.test', phone: '+7 900 111-22-33', card: LibraryCard(number: 'LC-1001', issuedAt: DateTime(2024, 1, 10), expiresAt: DateTime(2027, 1, 10))),
+  Reader(id: 2, lastName: 'Петрова', firstName: 'Анна', email: 'petrova@mail.test', phone: '+7 900 222-33-44', card: LibraryCard(number: 'LC-1002', issuedAt: DateTime(2024, 3, 2), expiresAt: DateTime(2026, 3, 2))),
+  Reader(id: 3, lastName: 'Сидоров', firstName: 'Илья', email: 'sidorov@mail.test', phone: '+7 900 333-44-55', card: LibraryCard(number: 'LC-1003', issuedAt: DateTime(2023, 9, 1), expiresAt: DateTime(2026, 9, 1))),
+  Reader(id: 4, lastName: 'Кузнецова', firstName: 'Мария', email: 'kuznetsova@mail.test', phone: '+7 900 444-55-66', card: LibraryCard(number: 'LC-1004', issuedAt: DateTime(2025, 2, 14), expiresAt: DateTime(2028, 2, 14))),
+  Reader(id: 5, lastName: 'Орлов', firstName: 'Никита', email: 'orlov@mail.test', phone: '+7 900 555-66-77', card: LibraryCard(number: 'LC-1005', issuedAt: DateTime(2024, 6, 20), expiresAt: DateTime(2027, 6, 20), active: false)),
+  Reader(id: 6, lastName: 'Морозова', firstName: 'Елена', email: 'morozova@mail.test', phone: '+7 900 666-77-88', card: LibraryCard(number: 'LC-1006', issuedAt: DateTime(2022, 11, 5), expiresAt: DateTime(2025, 11, 5))),
+  Reader(id: 7, lastName: 'Волков', firstName: 'Артём', email: 'volkov@mail.test', phone: '+7 900 777-88-99', card: LibraryCard(number: 'LC-1007', issuedAt: DateTime(2025, 1, 8), expiresAt: DateTime(2028, 1, 8))),
+  Reader(id: 8, lastName: 'Соколова', firstName: 'Дарья', email: 'sokolova@mail.test', phone: '+7 900 888-99-00', card: LibraryCard(number: 'LC-1008', issuedAt: DateTime(2024, 8, 19), expiresAt: DateTime(2027, 8, 19))),
 ];
 
 Genre? genreById(int id) {

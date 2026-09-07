@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../core/breakpoints.dart';
-import '../data/seed_data.dart';
+import '../data/library_store.dart';
 import '../models/book.dart';
 import '../models/book_query.dart';
 import '../state/book_list_notifier.dart';
@@ -75,10 +75,18 @@ class _BooksScreenState extends State<BooksScreen> {
   @override
   Widget build(BuildContext context) {
     final notifier = context.watch<BookListNotifier>();
+    final store = context.watch<LibraryStore>();
     final compact = isCompact(context);
+    final genres = store.genres.where((g) => !g.isDeleted).toList();
+    final publishers = store.publishers.where((p) => !p.isDeleted).toList();
 
     return Scaffold(
       appBar: buildAppBar(context, 'Каталог книг'),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => context.go('/books/new'),
+        tooltip: 'Новая книга',
+        child: const Icon(Icons.add),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -108,7 +116,10 @@ class _BooksScreenState extends State<BooksScreen> {
                   child: DropdownButtonFormField<int?>(
                     key: ValueKey('genre-${widget.query.genreId}'),
                     isExpanded: true,
-                    initialValue: widget.query.genreId,
+                    initialValue: widget.query.genreId != null &&
+                            genres.any((g) => g.id == widget.query.genreId)
+                        ? widget.query.genreId
+                        : null,
                     decoration: const InputDecoration(
                       labelText: 'Жанр',
                       border: OutlineInputBorder(),
@@ -127,7 +138,10 @@ class _BooksScreenState extends State<BooksScreen> {
                   child: DropdownButtonFormField<int?>(
                     key: ValueKey('publisher-${widget.query.publisherId}'),
                     isExpanded: true,
-                    initialValue: widget.query.publisherId,
+                    initialValue: widget.query.publisherId != null &&
+                            publishers.any((p) => p.id == widget.query.publisherId)
+                        ? widget.query.publisherId
+                        : null,
                     decoration: const InputDecoration(
                       labelText: 'Издательство',
                       border: OutlineInputBorder(),
@@ -198,7 +212,7 @@ class _BooksScreenState extends State<BooksScreen> {
                 error: notifier.status == LoadStatus.error ? notifier.error : null,
                 onRetry: () => _go(widget.query.copyWith(fail: false)),
                 child: compact
-                    ? _BookCards(notifier: notifier)
+                    ? _BookCards(notifier: notifier, store: store)
                     : EntityTable<Book>(
                         items: notifier.result.items,
                         idOf: (b) => b.id,
@@ -220,8 +234,8 @@ class _BooksScreenState extends State<BooksScreen> {
                           TableColumnSpec(label: 'ISBN', build: (b) => Text(b.isbn)),
                           TableColumnSpec(label: 'Год', sortField: 'year', numeric: true, build: (b) => Text('${b.year}')),
                           TableColumnSpec(label: 'Страниц', sortField: 'pages', numeric: true, build: (b) => Text('${b.pages}')),
-                          TableColumnSpec(label: 'Издательство', build: (b) => Text(publisherName(b.publisherId))),
-                          TableColumnSpec(label: 'Жанры', build: (b) => Text(genreNames(b.genreIds))),
+                          TableColumnSpec(label: 'Издательство', build: (b) => Text(store.publisherNameOf(b.publisherId))),
+                          TableColumnSpec(label: 'Жанры', build: (b) => Text(store.genreNamesOf(b.genreIds))),
                         ],
                         actions: (b) => _bookActions(context, notifier, b),
                       ),
@@ -242,8 +256,9 @@ class _BooksScreenState extends State<BooksScreen> {
 
 class _BookCards extends StatelessWidget {
   final BookListNotifier notifier;
+  final LibraryStore store;
 
-  const _BookCards({required this.notifier});
+  const _BookCards({required this.notifier, required this.store});
 
   @override
   Widget build(BuildContext context) {
@@ -267,7 +282,7 @@ class _BookCards extends StatelessWidget {
                   ? const TextStyle(decoration: TextDecoration.lineThrough)
                   : null,
             ),
-            subtitle: Text('${book.year} · ${publisherName(book.publisherId)} · ${genreNames(book.genreIds)}'),
+            subtitle: Text('${book.year} · ${store.publisherNameOf(book.publisherId)} · ${store.genreNamesOf(book.genreIds)}'),
             trailing: Wrap(children: _bookActions(context, notifier, book)),
             onTap: () => context.go('/books/${book.id}'),
           ),
@@ -283,6 +298,11 @@ List<Widget> _bookActions(BuildContext context, BookListNotifier notifier, Book 
       tooltip: 'Карточка',
       icon: const Icon(Icons.visibility_outlined),
       onPressed: () => context.go('/books/${book.id}'),
+    ),
+    IconButton(
+      tooltip: 'Изменить',
+      icon: const Icon(Icons.edit_outlined),
+      onPressed: () => context.go('/books/${book.id}/edit'),
     ),
     if (book.isDeleted)
       IconButton(
