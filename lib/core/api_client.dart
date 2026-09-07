@@ -19,7 +19,7 @@ Dio buildDio({String? Function()? tokenProvider}) {
     InterceptorsWrapper(
       onRequest: (options, handler) {
         final token = tokenProvider?.call();
-        if (token != null) {
+        if (token != null && token.isNotEmpty) {
           options.headers['Authorization'] = 'Bearer $token';
         }
         if (kDebugMode) {

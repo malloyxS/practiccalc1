@@ -9,6 +9,8 @@ import '../core/breakpoints.dart';
 import '../data/catalog_cache.dart';
 import '../data/library_store.dart';
 import '../models/author.dart';
+import '../models/role.dart';
+import '../state/auth_notifier.dart';
 import '../models/book_query.dart';
 import '../models/reader.dart';
 import '../state/book_list_notifier.dart';
@@ -75,6 +77,7 @@ class _GenresScreenState extends State<GenresScreen> {
             _ListFilters(
               search: _search,
               searchLabel: 'Поиск по названию',
+              showDeleted: context.watch<AuthNotifier>().can(Operation.restoreRecords),
               includeDeleted: widget.query.includeDeleted,
               hasSelection: notifier.hasSelection,
               selectedCount: notifier.selected.length,
@@ -260,6 +263,7 @@ class _PublishersScreenState extends State<PublishersScreen> {
             _ListFilters(
               search: _search,
               searchLabel: 'Поиск по названию или городу',
+              showDeleted: context.watch<AuthNotifier>().can(Operation.restoreRecords),
               includeDeleted: widget.query.includeDeleted,
               hasSelection: notifier.hasSelection,
               selectedCount: notifier.selected.length,
@@ -413,6 +417,7 @@ class _ReadersScreenState extends State<ReadersScreen> {
             _ListFilters(
               search: _search,
               searchLabel: 'Поиск по фамилии или email',
+              showDeleted: context.watch<AuthNotifier>().can(Operation.restoreRecords),
               includeDeleted: widget.query.includeDeleted,
               hasSelection: notifier.hasSelection,
               selectedCount: notifier.selected.length,
@@ -506,6 +511,7 @@ class _ListFilters extends StatelessWidget {
   final TextEditingController search;
   final String searchLabel;
   final bool includeDeleted;
+  final bool showDeleted;
   final bool hasSelection;
   final int selectedCount;
   final ValueChanged<String> onSearch;
@@ -516,6 +522,7 @@ class _ListFilters extends StatelessWidget {
     required this.search,
     required this.searchLabel,
     required this.includeDeleted,
+    this.showDeleted = false,
     required this.hasSelection,
     required this.selectedCount,
     required this.onSearch,
@@ -542,11 +549,12 @@ class _ListFilters extends StatelessWidget {
             onChanged: onSearch,
           ),
         ),
-        FilterChip(
-          label: const Text('Показывать удалённые'),
-          selected: includeDeleted,
-          onSelected: onDeleted,
-        ),
+        if (showDeleted)
+          FilterChip(
+            label: const Text('Показывать удалённые'),
+            selected: includeDeleted,
+            onSelected: onDeleted,
+          ),
         if (hasSelection)
           FilledButton.tonalIcon(
             onPressed: onDeleteSelected,
@@ -560,6 +568,8 @@ class _ListFilters extends StatelessWidget {
 
 List<Widget> _crudActions({
   required bool isDeleted,
+  required bool canRestore,
+  required bool canHardDelete,
   required VoidCallback onEdit,
   required Future<void> Function() onSoft,
   required Future<void> Function() onHard,
@@ -571,21 +581,25 @@ List<Widget> _crudActions({
       icon: const Icon(Icons.edit_outlined),
       onPressed: onEdit,
     ),
-    if (isDeleted)
+    if (isDeleted && canRestore)
       IconButton(tooltip: 'Восстановить', icon: const Icon(Icons.restore), onPressed: onRestore)
-    else
+    else if (!isDeleted)
       IconButton(tooltip: 'Логическое удаление', icon: const Icon(Icons.delete_outline), onPressed: () async => onSoft()),
-    IconButton(
-      tooltip: 'Физическое удаление',
-      icon: const Icon(Icons.delete_forever),
-      onPressed: () async => onHard(),
-    ),
+    if (canHardDelete)
+      IconButton(
+        tooltip: 'Физическое удаление',
+        icon: const Icon(Icons.delete_forever),
+        onPressed: () async => onHard(),
+      ),
   ];
 }
 
 List<Widget> _genreActions(BuildContext context, GenreListNotifier notifier, Genre genre) {
+  final auth = context.read<AuthNotifier>();
   return _crudActions(
     isDeleted: genre.isDeleted,
+    canRestore: auth.can(Operation.restoreRecords),
+    canHardDelete: auth.can(Operation.hardDelete),
     onEdit: () => context.go('/genres/${genre.id}/edit'),
     onSoft: () async {
       final ok = await confirmAction(
@@ -613,8 +627,11 @@ List<Widget> _publisherActions(
   Publisher publisher,
   Future<void> Function(Future<void> Function()) guarded,
 ) {
+  final auth = context.read<AuthNotifier>();
   return _crudActions(
     isDeleted: publisher.isDeleted,
+    canRestore: auth.can(Operation.restoreRecords),
+    canHardDelete: auth.can(Operation.hardDelete),
     onEdit: () => context.go('/publishers/${publisher.id}/edit'),
     onSoft: () async {
       final ok = await confirmAction(
@@ -637,8 +654,11 @@ List<Widget> _publisherActions(
 }
 
 List<Widget> _readerActions(BuildContext context, ReaderListNotifier notifier, Reader reader) {
+  final auth = context.read<AuthNotifier>();
   return _crudActions(
     isDeleted: reader.isDeleted,
+    canRestore: auth.can(Operation.restoreRecords),
+    canHardDelete: auth.can(Operation.hardDelete),
     onEdit: () => context.go('/readers/${reader.id}/edit'),
     onSoft: () async {
       final ok = await confirmAction(

@@ -2,6 +2,7 @@
 'use strict';
 
 const http = require('http');
+const crypto = require('crypto');
 const { URL } = require('url');
 
 function arg(name, fallback) {
@@ -10,10 +11,53 @@ function arg(name, fallback) {
 }
 
 const PORT = Number(arg('--port', '8080'));
+const TTL = Number(arg('--ttl', '900'));
+const SECRET = 'calc-web-pr5';
 const ORIGINS = arg('--origin', 'http://localhost:5555,http://127.0.0.1:5555')
   .split(',')
   .map((s) => s.trim())
   .filter(Boolean);
+
+function hashPassword(password) {
+  return crypto.createHash('sha256').update(String(password)).digest('hex');
+}
+
+function signToken(payload) {
+  const body = Buffer.from(JSON.stringify(payload)).toString('base64url');
+  const sig = crypto.createHmac('sha256', SECRET).update(body).digest('base64url');
+  return `${body}.${sig}`;
+}
+
+function readToken(token) {
+  if (!token || !token.includes('.')) return null;
+  const [body, sig] = token.split('.');
+  const expected = crypto.createHmac('sha256', SECRET).update(body).digest('base64url');
+  if (sig !== expected) return null;
+  try {
+    return JSON.parse(Buffer.from(body, 'base64url').toString('utf8'));
+  } catch {
+    return null;
+  }
+}
+
+function publicUser(user) {
+  return {
+    id: user.id,
+    username: user.username,
+    displayName: user.displayName,
+    role: user.role,
+    readerId: user.readerId ?? null,
+  };
+}
+
+function issueTokens(user) {
+  const now = Math.floor(Date.now() / 1000);
+  return {
+    accessToken: signToken({ sub: user.id, role: user.role, typ: 'access', exp: now + TTL }),
+    refreshToken: signToken({ sub: user.id, typ: 'refresh', exp: now + 7 * 24 * 3600 }),
+    user: publicUser(user),
+  };
+}
 
 const genres = [
   { id: 1, name: 'Художественная', description: '', deletedAt: null },
@@ -82,14 +126,54 @@ const readers = [
   { id: 8, lastName: 'Соколова', firstName: 'Дарья', email: 'sokolova@mail.test', phone: '+7 900 888-99-00', card: { number: 'LC-1008', issuedAt: '2024-08-19', expiresAt: '2027-08-19', active: true }, deletedAt: null },
 ];
 
-const db = { books, authors, genres, publishers, readers };
+const users = [
+  { id: 1, username: 'reader', passwordHash: hashPassword('Reader1!'), displayName: 'Анна Читатель', role: 'reader', readerId: 2 },
+  { id: 2, username: 'librarian', passwordHash: hashPassword('Librarian1!'), displayName: 'Игорь Библиотекарь', role: 'librarian', readerId: null },
+  { id: 3, username: 'admin', passwordHash: hashPassword('Admin123!'), displayName: 'Мария Админ', role: 'admin', readerId: null },
+];
+
+const loans = [
+  { id: 1, bookId: 7, readerId: 2, userId: 1, issuedAt: '2026-08-10', dueAt: '2026-09-10', returnedAt: null, extended: false },
+  { id: 2, bookId: 5, readerId: 2, userId: 1, issuedAt: '2026-07-01', dueAt: '2026-08-01', returnedAt: '2026-07-28', extended: false },
+];
+
+const db = { books, authors, genres, publishers, readers, users, loans };
 const nextId = {
   books: 25,
   authors: 11,
   genres: 6,
   publishers: 6,
   readers: 9,
+  users: 4,
+  loans: 3,
 };
+
+function expandLoan(loan) {
+  const book = byId(books, loan.bookId);
+  const reader = byId(readers, loan.readerId);
+  return {
+    ...loan,
+    bookTitle: book ? book.title : `книга ${loan.bookId}`,
+    readerName: reader ? `${reader.lastName} ${reader.firstName}` : `читатель ${loan.readerId}`,
+  };
+}
+
+function actorFrom(req) {
+  const header = req.headers.authorization || '';
+  const token = header.startsWith('Bearer ') ? header.slice(7) : '';
+  const payload = readToken(token);
+  if (!payload) return { error: 401, message: 'Требуется вход в систему.' };
+  if (payload.exp && payload.exp < Date.now() / 1000) {
+    return { error: 401, message: 'Срок действия токена истёк.' };
+  }
+  const user = byId(users, payload.sub);
+  if (!user) return { error: 401, message: 'Требуется вход в систему.' };
+  return { user };
+}
+
+function deny(res, origin, actor) {
+  send(res, origin, actor.error || 403, { message: actor.message || 'Недостаточно прав для этого действия.' });
+}
 
 function send(res, origin, status, body) {
   const headers = {
@@ -187,6 +271,168 @@ async function handle(req, res) {
   if (req.method === 'GET' && path === '/__health') {
     send(res, origin, 200, { status: 'ok' });
     return;
+  }
+
+  if (parts[0] === 'auth' && req.method === 'POST' && parts[1] === 'login') {
+    const body = await readBody(req);
+    const user = users.find((u) => u.username === body.username && u.passwordHash === hashPassword(body.password));
+    if (!user) return send(res, origin, 401, { message: 'Неверный логин или пароль.' });
+    send(res, origin, 200, issueTokens(user));
+    return;
+  }
+
+  if (parts[0] === 'auth' && req.method === 'POST' && parts[1] === 'register') {
+    const body = await readBody(req);
+    if (!body.username || !body.password || !body.displayName) {
+      return send(res, origin, 422, { message: 'Ошибка валидации', errors: { username: 'Заполните все поля' } });
+    }
+    if (users.some((u) => u.username === body.username)) {
+      return send(res, origin, 422, { message: 'Ошибка валидации', errors: { username: 'Логин уже занят' } });
+    }
+    const created = {
+      id: nextId.users++,
+      username: body.username,
+      passwordHash: hashPassword(body.password),
+      displayName: body.displayName,
+      role: 'reader',
+      readerId: null,
+    };
+    users.push(created);
+    send(res, origin, 201, issueTokens(created));
+    return;
+  }
+
+  if (parts[0] === 'auth' && req.method === 'POST' && parts[1] === 'refresh') {
+    const body = await readBody(req);
+    const payload = readToken(body.refreshToken);
+    if (!payload || payload.typ !== 'refresh') {
+      return send(res, origin, 401, { message: 'Токен обновления недействителен.' });
+    }
+    if (payload.exp && payload.exp < Date.now() / 1000) {
+      return send(res, origin, 401, { message: 'Токен обновления истёк.' });
+    }
+    const user = byId(users, payload.sub);
+    if (!user) return send(res, origin, 401, { message: 'Требуется вход в систему.' });
+    send(res, origin, 200, issueTokens(user));
+    return;
+  }
+
+  if (parts[0] === 'auth' && req.method === 'GET' && parts[1] === 'me') {
+    const actor = actorFrom(req);
+    if (actor.error) return deny(res, origin, actor);
+    send(res, origin, 200, publicUser(actor.user));
+    return;
+  }
+
+  const actor = actorFrom(req);
+  if (actor.error) return deny(res, origin, actor);
+  const role = actor.user.role;
+  const isAdmin = role === 'admin';
+  const isLibrarian = role === 'librarian' || isAdmin;
+  const isReader = role === 'reader';
+
+  if (parts[0] === 'loans' && parts[1] === 'mine' && req.method === 'GET') {
+    if (!isReader) return send(res, origin, 403, { message: 'Мои выдачи доступны только читателю.' });
+    const rows = loans.filter((l) => l.userId === actor.user.id);
+    send(res, origin, 200, paginate(rows.map(expandLoan), page, size));
+    return;
+  }
+
+  if (parts[0] === 'loans' && req.method === 'GET' && parts.length === 1) {
+    if (!isLibrarian) return send(res, origin, 403, { message: 'Недостаточно прав для этого действия.' });
+    send(res, origin, 200, paginate(loans.map(expandLoan), page, size));
+    return;
+  }
+
+  if (parts[0] === 'loans' && req.method === 'POST' && parts.length === 1) {
+    if (!isLibrarian) return send(res, origin, 403, { message: 'Недостаточно прав для этого действия.' });
+    const body = await readBody(req);
+    const book = byId(books, Number(body.bookId));
+    const reader = byId(readers, Number(body.readerId));
+    if (!book || !reader) return send(res, origin, 404, { message: 'Запись не найдена.' });
+    if (book.copiesAvailable <= 0) return send(res, origin, 409, { message: 'Нет свободных экземпляров' });
+    book.copiesAvailable -= 1;
+    const created = {
+      id: nextId.loans++,
+      bookId: book.id,
+      readerId: reader.id,
+      userId: actor.user.id,
+      issuedAt: new Date().toISOString().slice(0, 10),
+      dueAt: new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10),
+      returnedAt: null,
+      extended: false,
+    };
+    loans.push(created);
+    send(res, origin, 201, expandLoan(created));
+    return;
+  }
+
+  if (parts[0] === 'loans' && parts[2] === 'extend' && req.method === 'POST') {
+    const loan = byId(loans, Number(parts[1]));
+    if (!loan) return send(res, origin, 404, { message: 'Запись не найдена.' });
+    if (!isReader || loan.userId !== actor.user.id) {
+      return send(res, origin, 403, { message: 'Продлить можно только свою выдачу.' });
+    }
+    if (loan.returnedAt) return send(res, origin, 409, { message: 'Выдача уже закрыта.' });
+    if (loan.extended) return send(res, origin, 409, { message: 'Срок уже продлевали.' });
+    const due = new Date(loan.dueAt);
+    due.setDate(due.getDate() + 14);
+    loan.dueAt = due.toISOString().slice(0, 10);
+    loan.extended = true;
+    send(res, origin, 200, expandLoan(loan));
+    return;
+  }
+
+  if (parts[0] === 'loans' && parts[2] === 'return' && req.method === 'POST') {
+    if (!isLibrarian) return send(res, origin, 403, { message: 'Недостаточно прав для этого действия.' });
+    const loan = byId(loans, Number(parts[1]));
+    if (!loan) return send(res, origin, 404, { message: 'Запись не найдена.' });
+    if (!loan.returnedAt) {
+      loan.returnedAt = new Date().toISOString().slice(0, 10);
+      const book = byId(books, loan.bookId);
+      if (book) book.copiesAvailable += 1;
+    }
+    send(res, origin, 200, expandLoan(loan));
+    return;
+  }
+
+  if (parts[0] === 'users' && req.method === 'GET' && parts.length === 1) {
+    if (!isAdmin) return send(res, origin, 403, { message: 'Управление пользователями доступно только администратору.' });
+    send(res, origin, 200, { items: users.map(publicUser), page: 1, size: users.length, total: users.length });
+    return;
+  }
+
+  if (parts[0] === 'users' && req.method === 'PUT' && parts.length === 2) {
+    if (!isAdmin) return send(res, origin, 403, { message: 'Управление пользователями доступно только администратору.' });
+    const user = byId(users, Number(parts[1]));
+    if (!user) return send(res, origin, 404, { message: 'Запись не найдена.' });
+    const body = await readBody(req);
+    if (body.role && ['reader', 'librarian', 'admin'].includes(body.role)) user.role = body.role;
+    send(res, origin, 200, publicUser(user));
+    return;
+  }
+
+  if (parts[0] === 'stats' && req.method === 'GET') {
+    if (!isAdmin) return send(res, origin, 403, { message: 'Статистика доступна только администратору.' });
+    send(res, origin, 200, {
+      books: books.filter((b) => !b.deletedAt).length,
+      authors: authors.filter((a) => !a.deletedAt).length,
+      readers: readers.filter((r) => !r.deletedAt).length,
+      activeLoans: loans.filter((l) => !l.returnedAt).length,
+      users: users.length,
+    });
+    return;
+  }
+
+  const write = req.method !== 'GET';
+  if (includeDeleted && !isAdmin) {
+    return send(res, origin, 403, { message: 'Просмотр удалённых записей доступен только администратору.' });
+  }
+  if (write && !isLibrarian) {
+    return send(res, origin, 403, { message: 'Недостаточно прав для этого действия.' });
+  }
+  if ((q.hard === 'true' || parts[2] === 'restore') && !isAdmin) {
+    return send(res, origin, 403, { message: 'Физическое удаление и восстановление доступны только администратору.' });
   }
 
   if (parts[0] === 'books' && parts[1] === 'bulk-delete' && req.method === 'POST') {
@@ -413,4 +659,5 @@ http.createServer((req, res) => {
 }).listen(PORT, () => {
   console.log(`mock API http://127.0.0.1:${PORT}/api/__health`);
   console.log(`CORS origins: ${ORIGINS.join(', ')}`);
+  console.log(`access token TTL: ${TTL}s`);
 });

@@ -6,8 +6,10 @@ import '../core/api_exceptions.dart';
 import '../data/catalog_cache.dart';
 import '../models/author.dart';
 import '../models/book.dart';
+import '../models/role.dart';
 import '../repositories/author_repository.dart';
 import '../repositories/book_repository.dart';
+import '../state/auth_notifier.dart';
 import '../widgets/app_chrome.dart';
 
 class BookDetailScreen extends StatefulWidget {
@@ -105,6 +107,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
       return _Missing(title: 'Карточка книги', message: _error ?? 'Книга не найдена.');
     }
     final cache = context.watch<CatalogCache>();
+    final auth = context.watch<AuthNotifier>();
     return Scaffold(
       appBar: buildAppBar(context, book.title),
       body: ListView(
@@ -124,14 +127,16 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
             spacing: 12,
             runSpacing: 12,
             children: [
-              FilledButton(
-                onPressed: _issuing ? null : _issue,
-                child: Text(_issuing ? 'Выдача...' : 'Выдать'),
-              ),
-              FilledButton.tonal(
-                onPressed: () => context.go('/books/${book.id}/edit'),
-                child: const Text('Изменить'),
-              ),
+              if (auth.can(Operation.issueLoan))
+                FilledButton(
+                  onPressed: _issuing ? null : _issue,
+                  child: Text(_issuing ? 'Выдача...' : 'Выдать'),
+                ),
+              if (auth.can(Operation.manageBooks))
+                FilledButton.tonal(
+                  onPressed: () => context.go('/books/${book.id}/edit'),
+                  child: const Text('Изменить'),
+                ),
               OutlinedButton(
                 onPressed: () => context.go('/books'),
                 child: const Text('К каталогу'),

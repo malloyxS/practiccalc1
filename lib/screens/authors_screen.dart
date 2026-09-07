@@ -8,6 +8,8 @@ import '../core/breakpoints.dart';
 import '../data/catalog_cache.dart';
 import '../models/author.dart';
 import '../models/book_query.dart';
+import '../models/role.dart';
+import '../state/auth_notifier.dart';
 import '../state/author_list_notifier.dart';
 import '../state/book_list_notifier.dart';
 import '../widgets/app_chrome.dart';
@@ -120,11 +122,12 @@ class _AuthorsScreenState extends State<AuthorsScreen> {
                     onChanged: (value) => _go(widget.query.copyWith(country: value)),
                   ),
                 ),
-                FilterChip(
-                  label: const Text('Показывать удалённые'),
-                  selected: widget.query.includeDeleted,
-                  onSelected: (value) => _go(widget.query.copyWith(includeDeleted: value)),
-                ),
+                if (context.watch<AuthNotifier>().can(Operation.restoreRecords))
+                  FilterChip(
+                    label: const Text('Показывать удалённые'),
+                    selected: widget.query.includeDeleted,
+                    onSelected: (value) => _go(widget.query.copyWith(includeDeleted: value)),
+                  ),
                 if (notifier.hasSelection)
                   FilledButton.tonalIcon(
                     onPressed: () async {
@@ -232,6 +235,7 @@ List<Widget> _authorActions(
   AuthorListNotifier notifier,
   Author author,
 ) {
+  final auth = context.read<AuthNotifier>();
   return [
     IconButton(
       tooltip: 'Карточка',
@@ -243,13 +247,13 @@ List<Widget> _authorActions(
       icon: const Icon(Icons.edit_outlined),
       onPressed: () => context.go('/authors/${author.id}/edit'),
     ),
-    if (author.isDeleted)
+    if (author.isDeleted && auth.can(Operation.restoreRecords))
       IconButton(
         tooltip: 'Восстановить',
         icon: const Icon(Icons.restore),
         onPressed: () => notifier.restore(author.id),
       )
-    else
+    else if (!author.isDeleted)
       IconButton(
         tooltip: 'Логическое удаление',
         icon: const Icon(Icons.delete_outline),
@@ -263,17 +267,18 @@ List<Widget> _authorActions(
           if (ok) await notifier.softDelete(author.id);
         },
       ),
-    IconButton(
-      tooltip: 'Физическое удаление',
-      icon: const Icon(Icons.delete_forever),
-      onPressed: () async {
-        final ok = await confirmAction(
-          context,
-          title: 'Физическое удаление',
-          message: 'Запись «${author.fullName}» будет удалена навсегда.',
-        );
-        if (ok) await notifier.hardDelete(author.id);
-      },
-    ),
+    if (auth.can(Operation.hardDelete))
+      IconButton(
+        tooltip: 'Физическое удаление',
+        icon: const Icon(Icons.delete_forever),
+        onPressed: () async {
+          final ok = await confirmAction(
+            context,
+            title: 'Физическое удаление',
+            message: 'Запись «${author.fullName}» будет удалена навсегда.',
+          );
+          if (ok) await notifier.hardDelete(author.id);
+        },
+      ),
   ];
 }

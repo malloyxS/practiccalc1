@@ -8,6 +8,8 @@ import '../core/breakpoints.dart';
 import '../data/catalog_cache.dart';
 import '../models/book.dart';
 import '../models/book_query.dart';
+import '../models/role.dart';
+import '../state/auth_notifier.dart';
 import '../state/book_list_notifier.dart';
 import '../widgets/app_chrome.dart';
 import '../widgets/entity_table.dart';
@@ -76,17 +78,20 @@ class _BooksScreenState extends State<BooksScreen> {
   Widget build(BuildContext context) {
     final notifier = context.watch<BookListNotifier>();
     final cache = context.watch<CatalogCache>();
+    final auth = context.watch<AuthNotifier>();
     final compact = isCompact(context);
     final genres = cache.genres.where((g) => !g.isDeleted).toList();
     final publishers = cache.publishers.where((p) => !p.isDeleted).toList();
 
     return Scaffold(
       appBar: buildAppBar(context, 'Каталог книг'),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => context.go('/books/new'),
-        tooltip: 'Новая книга',
-        child: const Icon(Icons.add),
-      ),
+      floatingActionButton: auth.can(Operation.manageBooks)
+          ? FloatingActionButton(
+              onPressed: () => context.go('/books/new'),
+              tooltip: 'Новая книга',
+              child: const Icon(Icons.add),
+            )
+          : null,
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -183,12 +188,13 @@ class _BooksScreenState extends State<BooksScreen> {
                     ),
                   ),
                 ),
-                FilterChip(
-                  label: const Text('Показывать удалённые'),
-                  selected: widget.query.includeDeleted,
-                  onSelected: (value) => _go(widget.query.copyWith(includeDeleted: value)),
-                ),
-                if (notifier.hasSelection)
+                if (auth.can(Operation.restoreRecords))
+                  FilterChip(
+                    label: const Text('Показывать удалённые'),
+                    selected: widget.query.includeDeleted,
+                    onSelected: (value) => _go(widget.query.copyWith(includeDeleted: value)),
+                  ),
+                if (notifier.hasSelection && auth.can(Operation.manageBooks))
                   FilledButton.tonalIcon(
                     onPressed: () async {
                       final ok = await confirmAction(
@@ -237,7 +243,7 @@ class _BooksScreenState extends State<BooksScreen> {
                           TableColumnSpec(label: 'Издательство', build: (b) => Text(cache.publisherNameOf(b.publisherId))),
                           TableColumnSpec(label: 'Жанры', build: (b) => Text(cache.genreNamesOf(b.genreIds))),
                         ],
-                        actions: (b) => _bookActions(context, notifier, b),
+                        actions: (b) => _bookActions(context, notifier, b, auth),
                       ),
               ),
             ),
@@ -283,7 +289,7 @@ class _BookCards extends StatelessWidget {
                   : null,
             ),
             subtitle: Text('${book.year} · ${cache.publisherNameOf(book.publisherId)} · ${cache.genreNamesOf(book.genreIds)}'),
-            trailing: Wrap(children: _bookActions(context, notifier, book)),
+            trailing: Wrap(children: _bookActions(context, notifier, book, context.read<AuthNotifier>())),
             onTap: () => context.go('/books/${book.id}'),
           ),
         );
@@ -292,25 +298,31 @@ class _BookCards extends StatelessWidget {
   }
 }
 
-List<Widget> _bookActions(BuildContext context, BookListNotifier notifier, Book book) {
+List<Widget> _bookActions(
+  BuildContext context,
+  BookListNotifier notifier,
+  Book book,
+  AuthNotifier auth,
+) {
   return [
     IconButton(
       tooltip: 'Карточка',
       icon: const Icon(Icons.visibility_outlined),
       onPressed: () => context.go('/books/${book.id}'),
     ),
-    IconButton(
-      tooltip: 'Изменить',
-      icon: const Icon(Icons.edit_outlined),
-      onPressed: () => context.go('/books/${book.id}/edit'),
-    ),
-    if (book.isDeleted)
+    if (auth.can(Operation.manageBooks))
+      IconButton(
+        tooltip: 'Изменить',
+        icon: const Icon(Icons.edit_outlined),
+        onPressed: () => context.go('/books/${book.id}/edit'),
+      ),
+    if (book.isDeleted && auth.can(Operation.restoreRecords))
       IconButton(
         tooltip: 'Восстановить',
         icon: const Icon(Icons.restore),
         onPressed: () => notifier.restore(book.id),
       )
-    else
+    else if (!book.isDeleted && auth.can(Operation.manageBooks))
       IconButton(
         tooltip: 'Логическое удаление',
         icon: const Icon(Icons.delete_outline),
@@ -323,17 +335,26 @@ List<Widget> _bookActions(BuildContext context, BookListNotifier notifier, Book 
           if (ok) await notifier.softDelete(book.id);
         },
       ),
-    IconButton(
-      tooltip: 'Физическое удаление',
-      icon: const Icon(Icons.delete_forever),
-      onPressed: () async {
-        final ok = await confirmAction(
-          context,
-          title: 'Физическое удаление',
-          message: 'Запись «${book.title}» будет удалена навсегда. Восстановить её нельзя.',
-        );
-        if (ok) await notifier.hardDelete(book.id);
-      },
-    ),
+    if (auth.can(Operation.hardDelete))
+      IconButton(
+        tooltip: 'Физическое удаление',
+        icon: const Icon(Icons.delete_forever),
+        onPressed: () async {
+          final ok = await confirmAction(
+            context,
+            title: 'Физическое удаление',
+            message: 'Запись «${book.title}» будет удалена навсегда. Восстановить её нельзя.',
+          );
+          if (ok) {
+            try {
+              await notifier.hardDelete(book.id);
+            } catch (e) {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+              }
+            }
+          }
+        },
+      ),
   ];
 }

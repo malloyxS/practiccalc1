@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 import '../settings.dart';
+import '../state/auth_notifier.dart';
 
 PreferredSizeWidget buildAppBar(
   BuildContext context,
@@ -10,6 +12,7 @@ PreferredSizeWidget buildAppBar(
 }) {
   final settings = SettingsScope.of(context);
   final isDark = settings.themeMode == ThemeMode.dark;
+  final auth = context.watch<AuthNotifier>();
 
   return AppBar(
     title: Text(title),
@@ -27,6 +30,25 @@ PreferredSizeWidget buildAppBar(
           )
         : null,
     actions: [
+      if (auth.user != null)
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: Center(
+            child: Text(
+              '${auth.user!.displayName} · ${auth.uiRole.title}',
+              style: const TextStyle(fontSize: 13),
+            ),
+          ),
+        ),
+      if (auth.isAuthenticated)
+        IconButton(
+          tooltip: 'Выйти',
+          icon: const Icon(Icons.logout),
+          onPressed: () async {
+            await auth.logout();
+            if (context.mounted) context.go('/login');
+          },
+        ),
       IconButton(
         tooltip: isDark ? 'Светлая тема' : 'Тёмная тема',
         icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode),

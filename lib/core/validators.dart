@@ -1,5 +1,19 @@
 typedef Validator = String? Function(String?);
 
+class PasswordRules {
+  final bool longEnough;
+  final bool hasDigit;
+  final bool hasSpecial;
+
+  const PasswordRules({
+    required this.longEnough,
+    required this.hasDigit,
+    required this.hasSpecial,
+  });
+
+  bool get ok => longEnough && hasDigit && hasSpecial;
+}
+
 class V {
   static Validator required([String message = 'Поле обязательно']) {
     return (value) => (value == null || value.trim().isEmpty) ? message : null;
@@ -60,6 +74,25 @@ class V {
       final text = value?.trim() ?? '';
       if (text.isEmpty) return null;
       return DateTime.tryParse(text) == null ? 'Дата в формате ГГГГ-ММ-ДД' : null;
+    };
+  }
+
+  static PasswordRules passwordRules(String? value) {
+    final text = value ?? '';
+    return PasswordRules(
+      longEnough: text.length >= 8,
+      hasDigit: RegExp(r'\d').hasMatch(text),
+      hasSpecial: RegExp(r'''[!@#\$%^&*(),.?":{}|<>_\-+=\[\]\\/;'`~]''').hasMatch(text),
+    );
+  }
+
+  static Validator password() {
+    return (value) {
+      final rules = passwordRules(value);
+      if (!rules.longEnough) return 'Не короче 8 символов';
+      if (!rules.hasDigit) return 'Добавьте хотя бы одну цифру';
+      if (!rules.hasSpecial) return 'Добавьте специальный символ';
+      return null;
     };
   }
 
